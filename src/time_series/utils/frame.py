@@ -1,10 +1,11 @@
-from .bounding_box import BoundingBox
 from typing import List
+
+from .bounding_box import BoundingBox
 
 
 class Frame:
 
-    def __init__(self, frame_number: int, bounding_box_list: List[BoundingBox]=None):
+    def __init__(self, frame_number: int, bounding_box_list: List[BoundingBox] = None):
         if bounding_box_list is None:
             bounding_box_list = list()
 
