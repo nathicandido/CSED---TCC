@@ -30,8 +30,8 @@ if __name__ == '__main__':
     frame_list = [Frame(1, bb_list_1), Frame(2, bb_list_2), Frame(3, bb_list_3)]
     TSConstructor.build_time_series(frame_list)
 
-    sig = SignalGenerator.generate_random_signal(begin=1, end=10, length=500, plot=True)
-    fft = FastFourierTransformer(signal=sig)
-
-    fft.fast_transform(plot=True)
+    # sig = SignalGenerator.generate_random_signal(begin=1, end=10, length=500, plot=True)
+    # fft = FastFourierTransformer(signal=sig)
+    #
+    # fft.fast_transform(plot=True)
 
