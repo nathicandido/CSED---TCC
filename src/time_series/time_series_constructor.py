@@ -29,8 +29,10 @@ class TSConstructor:
          in enumerate(frame_list[0].bounding_box_list)]
 
         labeled_list = [frame_list[0].bounding_box_list]
-        del frame_list[0]
 
         for index, frame in enumerate(frame_list):
-            labeled_list.append()
-
+            if index == 0:
+                for bounding_box in frame.bounding_box_list:
+                    dist_list = cls.calculate_distance(bounding_box, frame.bounding_box_list)
+            else:
+                dist_list = cls.calculate_distance()
