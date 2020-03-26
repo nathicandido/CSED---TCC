@@ -40,21 +40,20 @@ class Yolo:
 		print(weights_file)
 		self.yolo_network = cv2.dnn.readNetFromDarknet(config_file, weights_file)
 
-	def image_capture(self):
-		# type: (None) -> List[np]
+	def image_capture(self) -> np.ndarray:
 		if self.debug:
 			print('[DEBUG] Image Capture')
 		frames = []
 		for camera in self.cameras:
 			try:
 				image_from_camera = camera.try_to_capture_image()
-			except ReadFrameException:
-				print(ReadFrameException.message)
+			except ReadFrameException as e:
+				raise ReadFrameException(e.message)
 			frames.append(image_from_camera)
 		frames = np.array(frames)
 		return frames
 
-	def run(self):
+	def get_cameras_images(self):
 		layer_names = self.yolo_network.getLayerNames()
 		layer_names = [layer_names[i[0] - 1] for i in self.yolo_network.getUnconnectedOutLayers()]
 		images = self.image_capture()
@@ -75,9 +74,9 @@ class Yolo:
 					if scores.any() < self.CONFIDENCE and np.argmax(scores) not in self.LABELS_TO_DETECT:
 						continue
 					(x, y, w, h) = detection[0:4] * np.array([W, H, W, H])
-					class_id = np.argmax(scores)
+					class_id = int(np.argmax(scores))
 					score = scores[class_id]
 					b_boxes.append(BoundingBox(x, y, w, h, score, self.labels[class_id]))
 			frames.append(Frame(1, b_boxes))
 
-		print(frames[0].bounding_box_list[0].label)
+		return frames

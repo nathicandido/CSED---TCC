@@ -9,26 +9,34 @@ from .utils.frame import Frame
 class TSConstructor:
 
     @classmethod
-    def __set_initial_labels(cls, frame_list: List[Frame]) -> None:
+    def __set_initial_labels(cls, camera_list: List[List[Frame]]) -> None:
         """
 
-        @param frame_list:
+        @param camera_list:
         @return:
         """
-        [setattr(bounding_box, 'label', str(index))
-         for index, bounding_box
-         in enumerate(frame_list[0].bounding_box_list)]
+        for frame_list in camera_list:
+            [setattr(bounding_box, 'label', str(index))
+             for index, bounding_box
+             in enumerate(frame_list[0].bounding_box_list)]
 
     @classmethod
-    def __map_initial_labels(cls, frame_list: List[Frame]) -> Dict[str, Dict[str, List]]:
+    def __map_initial_labels(cls, camera_list: List[List[Frame]]) -> List[Dict[str, Dict[str, List]]]:
         """
 
-        @param frame_list:
+        @param camera_list:
         @return:
         """
-        label_mapping = dict()
-        [label_mapping.update({str(bounding_box.label): {'pos_x': [], 'pos_y': []}})
-         for bounding_box in frame_list[0].bounding_box_list]
+        dict_model = {
+            'pos_x': [],
+            'pos_y': [],
+            'width': [],
+            'height': []
+        }
+        label_mapping = list()
+        for frame_list in camera_list:
+            for bounding_box in frame_list[0].bounding_box_list:
+                label_mapping.append({str(bounding_box.label): dict_model})
 
         return label_mapping
 
@@ -48,27 +56,29 @@ class TSConstructor:
         return distance_list
 
     @classmethod
-    def build_time_series(cls, frame_list: List[Frame]) -> Dict[str, Dict[str, list]]:
+    def build_time_series(cls, camera_list: List[List[Frame]]) -> List[Dict[str, Dict[str, list]]]:
         """
 
-        @param frame_list:
+        @param camera_list:
         @return:
         """
 
-        cls.__set_initial_labels(frame_list)
+        cls.__set_initial_labels(camera_list)
+        for frame_list in camera_list:
+            for index, frame in enumerate(frame_list):
+                if index > 0:
+                    for bounding_box in frame.bounding_box_list:
+                        distance_list = cls.__calculate_distance(bounding_box, frame_list[index - 1].bounding_box_list)
+                        distance_list.sort(key=itemgetter(1))  # SORTING BY DISTANCE
+                        setattr(bounding_box, 'label', distance_list[0][0])
 
-        for index, frame in enumerate(frame_list):
-            if index > 0:
+        ts_mapping = cls.__map_initial_labels(camera_list)
+        for frame_list in camera_list:
+            for frame in frame_list:
                 for bounding_box in frame.bounding_box_list:
-                    distance_list = cls.__calculate_distance(bounding_box, frame_list[index - 1].bounding_box_list)
-                    distance_list.sort(key=itemgetter(1))  # SORTING BY DISTANCE
-                    setattr(bounding_box, 'label', distance_list[0][0])
-
-        ts_mapping = cls.__map_initial_labels(frame_list)
-
-        for frame in frame_list:
-            for bounding_box in frame.bounding_box_list:
-                ts_mapping[bounding_box.label]['pos_x'].append(bounding_box.pos_x)
-                ts_mapping[bounding_box.label]['pos_y'].append(bounding_box.pos_y)
+                    ts_mapping[bounding_box.label]['pos_x'].append(bounding_box.pos_x)
+                    ts_mapping[bounding_box.label]['pos_y'].append(bounding_box.pos_y)
+                    ts_mapping[bounding_box.label]['width'].append(bounding_box.width)
+                    ts_mapping[bounding_box.label]['height'].append(bounding_box.height)
 
         return ts_mapping
