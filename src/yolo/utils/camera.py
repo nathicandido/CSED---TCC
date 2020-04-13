@@ -1,18 +1,18 @@
 import cv2
 
-from yolo.exceptions.exceptions import ReadFrameException
+from src.yolo.exceptions.exceptions import ReadFrameException
 
 
 class Camera:
 
-    def __init__(self, id):
+    def __init__(self, id, graus):
         self.id = id
         self.video_capture = cv2.VideoCapture(id)
-        self.image = self.video_capture.read()
+        self.graus = graus
 
     def try_to_capture_image(self):
         # type: (None) -> numpy
-        status, self.image = self.video_capture.read()
+        status, image = self.video_capture.read()
         if not status:
             raise ReadFrameException('Problems to read {}'.format(self.id))
-        return self.image
+        return image
