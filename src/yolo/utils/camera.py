@@ -5,10 +5,10 @@ from src.yolo.exceptions.exceptions import ReadFrameException
 
 class Camera:
 
-    def __init__(self, id, graus):
+    def __init__(self, id, angle):
         self.id = id
         self.video_capture = cv2.VideoCapture(id)
-        self.graus = graus
+        self.angle = angle
 
     def try_to_capture_image(self):
         # type: (None) -> numpy

@@ -1,7 +1,7 @@
 
 class BoundingBox:
-    def __init__(self, centro, tamanho, imagem, score):
-        self.centro = centro
-        self.tamanho = tamanho
-        self.imagem = imagem
+    def __init__(self, center, size, image, score):
+        self.center = center
+        self.size = size
+        self.image = image
         self.score = score

@@ -13,11 +13,11 @@ from src.yolo.utils.camera import Camera
 # cameras = [Camera(0)]		use the default camera, you can use the absolute path to a mp4 video
 # yolo = Yolo(cameras)
 # yolo.run()
-from src.yolo.utils.constantes import Constantes
+from src.yolo.utils.constants import Constants
 from src.yolo.utils.frame import Frame
-from src.yolo.utils.img_carro import ImgCarro
-from src.yolo.utils.ponto import Ponto
-from src.yolo.utils.tamanho import Tamanho
+from src.yolo.utils.img_car import ImgCar
+from src.yolo.utils.point import Point
+from src.yolo.utils.size import Size
 
 
 class ControladorYolo:
@@ -49,7 +49,7 @@ class ControladorYolo:
 	def get_cameras_images(self):
 		layer_names = self.yolo_network.getLayerNames()
 		layer_names = [layer_names[i[0] - 1] for i in self.yolo_network.getUnconnectedOutLayers()]
-		carros: List[ImgCarro] = list()
+		cars_list: List[ImgCar] = list()
 
 		for camera in self.cameras:
 			image = camera.try_to_capture_image()
@@ -69,28 +69,28 @@ class ControladorYolo:
 					class_id = int(np.argmax(scores))
 					score = scores[class_id]
 
-					box = BoundingBox(Ponto(x, y), Tamanho(w, h), self.extrair_subimagem(image, x, y, w, h), score)
-					distancia = self.extrair_distancia(H, h)
-					posicao = self.extrair_posicao(distancia, camera.graus, x, W)
-					carros.append(ImgCarro(box, posicao))
-		self.frames.append(Frame(carros))
+					b_box = BoundingBox(Point(x, y), Size(w, h), self.extract_b_box_as_image(image, x, y, w, h), score)
+					distance = self.extract_distance_car_and_camera(H, h)
+					position = self.extract_car_position(distance, camera.angle, x, W)
+					cars_list.append(ImgCar(b_box, position))
+		self.frames.append(Frame(cars_list))
 
-	def extrair_distancia(self, H, h):
-		ocupacao_radianos = math.radians(Constantes.ANGULO_ABERTURA_CAMERA / (H / h))
-		return Constantes.TAMANHO_CARRO / ocupacao_radianos
+	def extract_distance_car_and_camera(self, H, h):
+		rad = math.radians(Constants.CAMERA_APERTURE_ANGLE / (H / h))
+		return Constants.CAR_SIZE / rad
 
-	def extrair_posicao(self, distancia, angulo_camera, x, W):
-		angulo = x - (W / 2) / (W / 2) * Constantes.METADE_ANGULO_ABERTURA_CAMERA
-		cateto_adjascente = math.cos(angulo) * distancia
-		cateto_oposto = math.sin(angulo) * distancia
-		if math.cos(angulo_camera) != 0:
-			x = cateto_oposto * math.cos(angulo_camera)
-			y = cateto_adjascente * math.cos(angulo_camera)
-			return Ponto(x, y)
+	def extract_car_position(self, distance, camera_angle, x, W):
+		angle = x - (W / 2) / (W / 2) * Constants.HALF_CAMERA_APERTURE_ANGLE
+		adjacent_side = math.cos(angle) * distance
+		opposite_side = math.sin(angle) * distance
+		if math.cos(camera_angle) != 0:
+			x = opposite_side * math.cos(camera_angle)
+			y = adjacent_side * math.cos(camera_angle)
+			return Point(x, y)
 		else:
-			y = cateto_oposto * math.sin(angulo_camera)
-			x = cateto_adjascente * math.sin(angulo_camera) * -1
-			return Ponto(x, y)
+			y = opposite_side * math.sin(camera_angle)
+			x = adjacent_side * math.sin(camera_angle) * -1
+			return Point(x, y)
 
-	def extrair_subimagem(self, imagem, x, y, w, h):
-		return imagem[y:y + h, x:x + w]
+	def extract_b_box_as_image(self, image, x, y, w, h):
+		return image[y:y + h, x:x + w]

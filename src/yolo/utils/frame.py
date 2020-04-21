@@ -1,18 +1,24 @@
 from typing import List
 
-from src.yolo.utils import bounding_box
-from src.yolo.utils.img_carro import ImgCarro
+from src.yolo.utils.constants import Constants
+from src.yolo.utils.img_car import ImgCar
 
 
 class Frame:
-    carros = [ImgCarro]
 
-    def __init__(self, carros: List[ImgCarro]):
-        # self.carros = self.deletar_duplicados(carros)
-        self.carros = carros
+    def __init__(self, cars: List[ImgCar]):
+        self.cars = self.delete_duplicated_cars(cars)
 
-    # def deletar_duplicados(self, carros: List[ImgCarro]):
-        # for carro em carros
-            # if A.posicao === B.posicao
-            #     delete B
-        # return carros
+    def delete_duplicated_cars (self, cars: List[ImgCar]):
+        not_duplicated_list: List[ImgCar] = list()
+        for car in cars:
+            if not self.is_the_same_car(car.get_position(), not_duplicated_list):
+                not_duplicated_list.append(car)
+        return not_duplicated_list
+
+    def is_the_same_car(self, point, cars: List[ImgCar]):
+        for car in cars:
+            if point.get_distance(car.get_position()) < Constants.DISTANCE_TO_BE_THE_SAME_CAR:
+                return True
+        else:
+            return False
