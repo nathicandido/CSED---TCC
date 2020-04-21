@@ -20,7 +20,8 @@ class RealCar:
     def get_distance(self, real_car):
         return self.get_distance(real_car.get_position())
 
-    def get_features_from_image(self, image):
+    @staticmethod
+    def get_features_from_image(image):
         avg_color_per_row = numpy.average(image, axis=0)
         return numpy.average(avg_color_per_row, axis=0)
 

@@ -1,3 +1,4 @@
+import math
 import operator
 from typing import List
 
@@ -27,12 +28,13 @@ class TrackingController:
         list_by_distance = list()
         for index, car in enumerate(self.car_list):
             distance = target_position.get_distance(car.get_position())
-            if distance < Constants.SEARCH_TRESHOLD_ON_THE_SURFACE:
+            if distance < Constants.SEARCH_THRESHOLD_ON_THE_SURFACE:
                 list_by_distance.append([index, distance])
-        list_by_distance.sort(key = operator.itemgetter(1))
+        list_by_distance.sort(key=operator.itemgetter(1))
         return list_by_distance
 
-    def is_to_track(self, a_car, b_car):
-        # when are the same cars???
-        # compare a_car.get_features() and b_car.get_features()
-        #return True or False
+    @staticmethod
+    def is_to_track(a_car, b_car):
+        if math.dist(a_car.get_features(), b_car.get_features()) < Constants.DISTANCE_TO_TRACK_THRESHOLD:
+            return True
+        return False
