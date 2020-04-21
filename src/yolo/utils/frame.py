@@ -16,7 +16,8 @@ class Frame:
                 not_duplicated_list.append(car)
         return not_duplicated_list
 
-    def is_the_same_car(self, point, cars: List[ImgCar]):
+    @staticmethod
+    def is_the_same_car(point, cars: List[ImgCar]):
         for car in cars:
             if point.get_distance(car.get_position()) < Constants.DISTANCE_TO_BE_THE_SAME_CAR:
                 return True

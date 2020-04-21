@@ -20,7 +20,7 @@ from src.yolo.utils.point import Point
 from src.yolo.utils.size import Size
 
 
-class ControladorYolo:
+class YoloController:
 	labels = None
 	yolo_network = None
 	LABELS_TO_DETECT = [2, 3, 5, 6, 7]  # [Car, Motorbike, Bus, Train, Truck]
@@ -75,22 +75,25 @@ class ControladorYolo:
 					cars_list.append(ImgCar(b_box, position))
 		self.frames.append(Frame(cars_list))
 
-	def extract_distance_car_and_camera(self, H, h):
+	@staticmethod
+	def extract_distance_car_and_camera(H, h):
 		rad = math.radians(Constants.CAMERA_APERTURE_ANGLE / (H / h))
 		return Constants.CAR_SIZE / rad
 
-	def extract_car_position(self, distance, camera_angle, x, W):
+	@staticmethod
+	def extract_car_position(distance, camera_angle, x, W):
 		angle = x - (W / 2) / (W / 2) * Constants.HALF_CAMERA_APERTURE_ANGLE
 		adjacent_side = math.cos(angle) * distance
 		opposite_side = math.sin(angle) * distance
 		if math.cos(camera_angle) != 0:
-			x = opposite_side * math.cos(camera_angle)
-			y = adjacent_side * math.cos(camera_angle)
+			y = opposite_side * math.cos(camera_angle)
+			x = adjacent_side * math.cos(camera_angle)
 			return Point(x, y)
 		else:
-			y = opposite_side * math.sin(camera_angle)
-			x = adjacent_side * math.sin(camera_angle) * -1
+			x = opposite_side * math.sin(camera_angle) * -1
+			y = adjacent_side * math.sin(camera_angle)
 			return Point(x, y)
 
-	def extract_b_box_as_image(self, image, x, y, w, h):
+	@staticmethod
+	def extract_b_box_as_image(image, x, y, w, h):
 		return image[y:y + h, x:x + w]
