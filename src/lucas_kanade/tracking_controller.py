@@ -1,10 +1,10 @@
-import math
 import operator
 from typing import List
 
-from src.lucas_kanade.utils.constants import Constants
-from src.lucas_kanade.utils.real_car import RealCar
-from src.yolo.utils.img_car import ImgCar
+from lucas_kanade.helpers.lkconstants import LKConstants
+from lucas_kanade.helpers.real_car import RealCar
+from utils.img_car import ImgCar
+from utils.distance_calculator import DistanceCalculator
 
 
 class TrackingController:
@@ -28,13 +28,14 @@ class TrackingController:
         list_by_distance = list()
         for index, car in enumerate(self.car_list):
             distance = target_position.get_distance(car.get_position())
-            if distance < Constants.SEARCH_THRESHOLD_ON_THE_SURFACE:
+            if distance < LKConstants.SEARCH_THRESHOLD_ON_THE_SURFACE:
                 list_by_distance.append([index, distance])
         list_by_distance.sort(key=operator.itemgetter(1))
         return list_by_distance
 
     @staticmethod
     def is_to_track(a_car, b_car):
-        if math.dist(a_car.get_features(), b_car.get_features()) < Constants.DISTANCE_TO_TRACK_THRESHOLD:
+        if DistanceCalculator.n_dim_euclidean_distance(a_car.get_features(), b_car.get_features()) \
+                < LKConstants.DISTANCE_TO_TRACK_THRESHOLD:
             return True
         return False

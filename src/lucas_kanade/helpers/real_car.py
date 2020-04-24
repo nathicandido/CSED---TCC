@@ -3,8 +3,8 @@ from typing import List
 
 import numpy
 
-from src.lucas_kanade.utils.point import Point
-from src.yolo.utils.img_car import ImgCar
+from utils.point import Point
+from utils.img_car import ImgCar
 
 
 class RealCar:
