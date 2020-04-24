@@ -1,4 +1,3 @@
-
 class BoundingBox:
     def __init__(self, center, size, image, score):
         self.center = center

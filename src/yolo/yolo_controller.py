@@ -5,19 +5,18 @@ import numpy as np
 import os
 
 from typing import List
-from src.yolo.exceptions.exceptions import ReadFrameException
-from src.yolo.utils.bounding_box import BoundingBox
-from src.yolo.utils.camera import Camera
+from src.yolo.helpers.bounding_box import BoundingBox
+from src.yolo.helpers.camera import Camera
 
 # ----------HOW TO----------
 # cameras = [Camera(0)]		use the default camera, you can use the absolute path to a mp4 video
 # yolo = Yolo(cameras)
 # yolo.run()
-from src.yolo.utils.constants import Constants
-from src.yolo.utils.frame import Frame
-from src.yolo.utils.img_car import ImgCar
-from src.yolo.utils.point import Point
-from src.yolo.utils.size import Size
+from src.yolo.helpers.yoloconstants import YOLOConstants
+from src.yolo.helpers.frame import Frame
+from utils.img_car import ImgCar
+from utils.point import Point
+from src.yolo.helpers.size import Size
 
 
 class YoloController:
@@ -77,12 +76,12 @@ class YoloController:
 
 	@staticmethod
 	def extract_distance_car_and_camera(H, h):
-		rad = math.radians(Constants.CAMERA_APERTURE_ANGLE / (H / h))
-		return Constants.CAR_SIZE / rad
+		rad = math.radians(YOLOConstants.CAMERA_APERTURE_ANGLE / (H / h))
+		return YOLOConstants.CAR_SIZE / rad
 
 	@staticmethod
 	def extract_car_position(distance, camera_angle, x, W):
-		angle = x - (W / 2) / (W / 2) * Constants.HALF_CAMERA_APERTURE_ANGLE
+		angle = x - (W / 2) / (W / 2) * YOLOConstants.HALF_CAMERA_APERTURE_ANGLE
 		adjacent_side = math.cos(angle) * distance
 		opposite_side = math.sin(angle) * distance
 		if math.cos(camera_angle) != 0:

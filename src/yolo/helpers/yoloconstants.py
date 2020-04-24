@@ -1,4 +1,4 @@
-class Constants:
+class YOLOConstants:
     CAMERA_APERTURE_ANGLE = 68
     HALF_CAMERA_APERTURE_ANGLE = CAMERA_APERTURE_ANGLE / 2
     CAR_SIZE = 1.6
