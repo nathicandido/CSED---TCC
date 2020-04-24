@@ -1,8 +1,8 @@
-""" fft_transformer.py """
+""" fourier_controller.py """
 
 import numpy as np
 import matplotlib.pyplot as plt
-from fft.utils.abstract_vehicle import AbstractVehicle
+from fft.helpers.abstract_vehicle import AbstractVehicle
 
 
 class FourierController:

@@ -4,7 +4,7 @@ from random import uniform
 from typing import Union
 import matplotlib.pyplot as plt
 
-from .exceptions.exceptions import MissingArgumentsException
+from utils.exceptions.exceptions import MissingArgumentsError
 
 
 class SignalGenerator:
@@ -27,7 +27,7 @@ class SignalGenerator:
         plot = kwargs.get("plot")
 
         if not all([begin, end, length]):
-            raise MissingArgumentsException("Arguments are missing")
+            raise MissingArgumentsError("Arguments are missing")
 
         signal = [uniform(begin, end) for _ in range(length)]
 

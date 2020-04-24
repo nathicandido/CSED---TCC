@@ -1,5 +1,3 @@
-
-
 class AbstractVehicle:
 
     def __init__(self, id_veiculo, sinal):
