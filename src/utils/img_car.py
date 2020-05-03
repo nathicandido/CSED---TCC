@@ -8,3 +8,6 @@ class ImgCar:
 
     def get_image(self):
         return self.b_box.image
+
+    def __str__(self):
+        return f'position: {self.position}, {self.b_box}'

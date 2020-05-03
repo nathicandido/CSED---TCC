@@ -19,6 +19,7 @@ class Frame:
     @staticmethod
     def is_the_same_car(point, cars: List[ImgCar]):
         for car in cars:
+            print(car.position)
             if point.get_distance(car.get_position()) < YOLOConstants.DISTANCE_TO_BE_THE_SAME_CAR:
                 return True
         else:
