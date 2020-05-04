@@ -20,20 +20,20 @@ class TrackingController:
         self.car_list: List[RealCar] = list()
 
     def receiver(self, img_car_list: List[ImgCar]):
-        self.log.i(self.TAG, f'number of cars is {len(img_car_list)}')
+        self.log.i(self.TAG, f'Number of cars is {len(img_car_list)}')
         for new_image_car in img_car_list:
             best_candidates = self.get_ordered_list(new_image_car.get_position())
             new_real_car = RealCar(new_image_car)
             for candidate in best_candidates:
                 if self.is_to_track(new_real_car, self.car_list[candidate[0]]):
                     if self.debug:
-                        self.log.d(self.TAG, 'is the same car, ID')
+                        self.log.d(self.TAG, 'Same car, ID')
                     self.car_list[candidate[0]].set_new_position(new_real_car.get_position())
                     self.car_list[candidate[0]].set_new_features(new_real_car.get_features())
                     break
             else:
                 if self.debug:
-                    self.log.d(self.TAG, f'is a different car, new car ID is: {new_real_car.ID}')
+                    self.log.d(self.TAG, f'Different car, new car ID is: {new_real_car.ID}')
                     cv2.imwrite(str(Path.joinpath(Path.cwd(), 'saved_images', f'{str(new_real_car.ID)}.jpg')), new_image_car.get_image())
                 self.car_list.append(new_real_car)
 
