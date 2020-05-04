@@ -3,13 +3,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from fft.helpers.abstract_vehicle import AbstractVehicle
+from fft.helpers.signal import Signal3D
 
 
 class FourierController:
 
     @classmethod
-    def build_abstract_vehicle(cls, vehicle_id: str, signal: list) -> AbstractVehicle:
-        return AbstractVehicle(vehicle_id, cls._fft(signal))
+    def build_abstract_vehicle(cls, vehicle_id: str, x_sig: list, y_sig: list) -> AbstractVehicle:
+        return AbstractVehicle(vehicle_id, Signal3D(cls._fft(x_sig), cls._fft(y_sig)))
 
     @classmethod
     def _fft(cls, signal, **kwargs: bool) -> list:
