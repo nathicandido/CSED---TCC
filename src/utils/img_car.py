@@ -9,5 +9,8 @@ class ImgCar:
     def get_image(self):
         return self.b_box.image
 
+    def get_b_box_center(self):
+        return self.b_box.center
+
     def __str__(self):
         return f'position: {self.position}, {self.b_box}'
