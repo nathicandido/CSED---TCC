@@ -16,7 +16,7 @@ class Main:
     PARSED_FILES_PATH = str(Path.joinpath(Path.cwd(), '..', 'assets', 'parsed'))
 
     @classmethod
-    def run(cls, video_path_list, parse=False, maneuver='DEFAULT', plot=False, plot_index=0):
+    def run(cls, video_path_list, parse=False, maneuver='DEFAULT', plot=False):
 
         camera_list = list(
             starmap(
@@ -55,10 +55,23 @@ class Main:
             )
 
         if plot:
-            plt.plot(list(map(lambda p: p.x, lucas_kanade.car_list[plot_index].positions)), label='X')
-            plt.plot(list(map(lambda p: p.y, lucas_kanade.car_list[plot_index].positions)), label='Y')
-            plt.legend(loc='best')
-            plt.show()
+            while True:
+                plot_index = input('Enter vehicle index to be plotted (Q + Enter to exit): ')
+
+                if plot_index.upper() == 'Q':
+                    break
+
+                try:
+                    plt.plot(list(map(lambda p: p.x, lucas_kanade.car_list[int(plot_index)].positions)), label='X')
+                    plt.plot(list(map(lambda p: p.y, lucas_kanade.car_list[int(plot_index)].positions)), label='Y')
+                    plt.legend(loc='best')
+                    plt.show()
+
+                except TypeError:
+                    print('Input value must be a integer or Q to exit')
+
+                except IndexError:
+                    print('Index out of bounds')
 
         if parse:
             for car in abstract_vehicle_list:
@@ -93,10 +106,6 @@ if __name__ == '__main__':
                                 nargs=1,
                                 action='store_true')
 
-    optional_group.add_argument('--plot_index',
-                                help='Index inside car list to plotted',
-                                nargs=1)
-
     required_group.add_argument('--video_path_list',
                                 help='Set of paths to access the videos for processing, '
                                      'i. e.: "path/to/file/one; path/to/file/2", '
@@ -105,7 +114,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if any([all([args.parse, args.maneuver]), all([args.plot, args.plot_index])]):
+    if all([args.plot, args.plot_index]):
 
         path_list = args.video_path_list.split(';')
         if len(path_list) != 4:
@@ -116,9 +125,7 @@ if __name__ == '__main__':
             parse=args.parse,
             maneuver=args.maneuver,
             plot=args.plot,
-            plot_index=args.plot_index
         )
 
     else:
-        raise ArgumentError('arguments [--parse, --maneuver] and [--plot, --plot_index] '
-                            'are required to be mutually inclusive')
+        raise ArgumentError('arguments [--parse, --maneuver] are mutually inclusive')
