@@ -28,7 +28,7 @@ class YoloController:
 	yolo_network = None
 	LABELS_TO_DETECT = [2, 3, 5, 6, 7]  # [Car, Motorbike, Bus, Train, Truck]
 	CONFIDENCE = 0.50
-	frames: List[Frame] = list()
+	frame = None
 
 	def __init__(self, cameras: List[Camera], yolo_path=os.path.join(os.getcwd(), 'yolo', 'resources', 'yolo-coco'), debug=False):
 		self.debug = debug
@@ -68,22 +68,24 @@ class YoloController:
 				for detection in output:
 					scores = detection[5:]
 					if np.argmax(scores) in self.LABELS_TO_DETECT and scores[np.argmax(scores)] > self.CONFIDENCE:
-						print(f'indice = {np.argmax(scores)}, valor = {scores[np.argmax(scores)]}')
 						(x, y, w, h) = detection[0:4] * np.array([W, H, W, H])
 
+						distance = self.extract_distance_car_and_camera(H, h)
+						if distance > YOLOConstants.MAX_DISTANCE:
+							continue
 						class_id = int(np.argmax(scores))
 						score = scores[class_id]
 
 						b_box = BoundingBox(Point(x, y), Size(w, h), self.extract_b_box_as_image(image, x, y, w, h), score)
-						distance = self.extract_distance_car_and_camera(H, h)
 						position = self.extract_car_position(distance, camera.angle, x, W)
 						img_car = ImgCar(b_box, position)
 						if self.debug:
 							self.log.d(self.TAG, img_car)
 						cars_list.append(img_car)
+						self.frame = Frame(cars_list)
 					else:
 						continue
-		return cars_list
+		return self.frame.cars
 
 	@staticmethod
 	def extract_distance_car_and_camera(H, h):

@@ -33,7 +33,7 @@ class TrackingController:
             for candidate in best_candidates:
                 if self.is_to_track(new_real_car, self.car_list[candidate[0]]):
                     if self.debug:
-                        self.log.d(self.TAG, 'Same car, ID')
+                        self.log.d(self.TAG, f'is the same car, ID {self.car_list[candidate[0]].ID}')
                     self.car_list[candidate[0]].set_new_position(new_real_car.get_position())
                     self.car_list[candidate[0]].set_new_features(new_real_car.get_features())
                     cv2.imwrite(str(Path.joinpath(Path.cwd(), 'saved_images', str(self.car_list[candidate[0]].ID),
@@ -52,15 +52,17 @@ class TrackingController:
         list_by_distance = list()
         for index, car in enumerate(self.car_list):
             distance = target_position.get_distance(car.get_position())
+            self.log.i(self.TAG, f'Plane Distance: {distance}')
             if distance < LKConstants.SEARCH_THRESHOLD_ON_THE_SURFACE:
                 list_by_distance.append([index, distance])
         list_by_distance.sort(key=operator.itemgetter(1))
         return list_by_distance
 
     def is_to_track(self, a_car, b_car):
-        if DistanceCalculator.n_dim_euclidean_distance(a_car.get_features(), b_car.get_features()) \
-                < LKConstants.DISTANCE_TO_TRACK_THRESHOLD:
+        # if DistanceCalculator.n_dim_euclidean_distance(a_car.get_features(), b_car.get_features()) \
+        #         < LKConstants.DISTANCE_TO_TRACK_THRESHOLD:
+        if abs(a_car.get_features() - b_car.get_features()) < LKConstants.DISTANCE_TO_TRACK_THRESHOLD:
             return True
         self.log.e(self.TAG,
-                   f'Distance: {DistanceCalculator.n_dim_euclidean_distance(a_car.get_features(), b_car.get_features())}')
+                   f'Grayscale Distance: {abs(a_car.get_features() - b_car.get_features())}')
         return False
