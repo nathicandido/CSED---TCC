@@ -3,6 +3,7 @@ from pathlib import Path
 from argparse import ArgumentParser, ArgumentError
 from itertools import starmap
 from matplotlib import pyplot as plt
+from numpy import savez, fromstring
 
 from lucas_kanade.tracking_controller import TrackingController
 from yolo.helpers.camera import Camera
@@ -61,10 +62,13 @@ class Main:
 
         if parse:
             for car in abstract_vehicle_list:
-                with open(f'{cls.PARSED_FILES_PATH}/{maneuver.upper()}/{maneuver.upper()}_{car.vehicle_id}') as f:
-                    f.write(
-                        f'{maneuver.upper()};{",".join(list(map(lambda s: s.x_sig, car.signal)))};{",".join(list(map(lambda s: s.y_sig, car.signal)))}'
-                    )
+                savez(
+                    f'{cls.PARSED_FILES_PATH}/{maneuver.upper()}/'
+                    f'{maneuver.upper()}_{str(car.vehicle_id).replace(".", "_")}.npz',
+                    label=fromstring(maneuver.upper(), sep=','),
+                    x_sig=car.signal.x_sig,
+                    y_sig=car.signal.y_sig
+                )
 
 
 if __name__ == '__main__':
