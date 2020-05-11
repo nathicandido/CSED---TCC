@@ -3,7 +3,7 @@ from pathlib import Path
 from argparse import ArgumentParser, ArgumentError
 from itertools import starmap
 from matplotlib import pyplot as plt
-from numpy import savez, fromstring
+from numpy import savez, array
 
 from lucas_kanade.tracking_controller import TrackingController
 from yolo.helpers.camera import Camera
@@ -78,7 +78,7 @@ class Main:
                 savez(
                     f'{cls.PARSED_FILES_PATH}/{maneuver.upper()}/'
                     f'{maneuver.upper()}_{str(car.vehicle_id).replace(".", "_")}.npz',
-                    label=fromstring(maneuver.upper(), sep=','),
+                    label=array([maneuver.upper()]),
                     x_sig=car.signal.x_sig,
                     y_sig=car.signal.y_sig
                 )
