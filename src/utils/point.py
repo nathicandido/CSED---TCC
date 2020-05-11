@@ -1,4 +1,4 @@
-from src.utils.distance_calculator import DistanceCalculator
+from utils.distance_calculator import DistanceCalculator
 
 
 class Point:

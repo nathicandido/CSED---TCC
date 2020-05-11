@@ -1,4 +1,5 @@
 """ main.py """
+import time
 from pathlib import Path
 from argparse import ArgumentParser, ArgumentError
 from itertools import starmap
@@ -6,6 +7,7 @@ from matplotlib import pyplot as plt
 from numpy import savez, array
 
 from lucas_kanade.tracking_controller import TrackingController
+from utils.contants import Constants
 from yolo.helpers.camera import Camera
 from yolo.yolo_controller import YoloController
 from fft.fourier_controller import FourierController
@@ -13,7 +15,7 @@ from fft.fourier_controller import FourierController
 
 class Main:
     ANGLE_LIST = [0, 90, 180, 270]
-    PARSED_FILES_PATH = str(Path.joinpath(Path.cwd(), '..', 'assets', 'parsed'))
+    PARSED_FILES_PATH = Path.joinpath(Path.cwd(), '..', 'assets', 'parsed')
 
     @classmethod
     def run(cls, video_path_list, parse=False, maneuver='DEFAULT', plot=False):
@@ -36,7 +38,7 @@ class Main:
         i = 0
         while i < min_video_length:
             try:
-                i = i + 1
+                i = i + Constants.NUMBER_OF_FRAMES
                 cars_list = yolo.get_cameras_images()
                 lucas_kanade.receiver(cars_list)
 
@@ -74,9 +76,11 @@ class Main:
                     print('Index out of bounds')
 
         if parse:
+            current_parse_folder = Path.joinpath(cls.PARSED_FILES_PATH, str(time.time()).replace('.', '-'))
+            current_parse_folder.mkdir(parents=True, exist_ok=True)
             for car in abstract_vehicle_list:
                 savez(
-                    f'{cls.PARSED_FILES_PATH}/{maneuver.upper()}/'
+                    f'{current_parse_folder}/'
                     f'{maneuver.upper()}_{str(car.vehicle_id).replace(".", "_")}.npz',
                     label=array([maneuver.upper()]),
                     x_sig=car.signal.x_sig,
@@ -98,12 +102,10 @@ if __name__ == '__main__':
                                 action='store_true')
 
     optional_group.add_argument('--maneuver',
-                                help='Maneuver name so the parsed files may be saved properly',
-                                nargs=1)
+                                help='Maneuver name so the parsed files may be saved properly')
 
     optional_group.add_argument('--plot',
                                 help='Boolean argument used for plotting a time series. Must inform --plot_index',
-                                nargs=1,
                                 action='store_true')
 
     required_group.add_argument('--video_path_list',
@@ -114,7 +116,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if all([args.plot, args.plot_index]):
+    if all([args.parse, args.maneuver]):
 
         path_list = args.video_path_list.split(';')
         if len(path_list) != 4:
