@@ -5,6 +5,7 @@ from argparse import ArgumentParser, ArgumentError
 from itertools import starmap
 from matplotlib import pyplot as plt
 from numpy import savez, array
+from tqdm import tqdm
 
 from lucas_kanade.tracking_controller import TrackingController
 from utils.contants import Constants
@@ -18,7 +19,15 @@ class Main:
     PARSED_FILES_PATH = Path.joinpath(Path.cwd(), '..', 'assets', 'parsed')
 
     @classmethod
-    def run(cls, video_path_list, parse=False, maneuver='DEFAULT', plot=False):
+    def filter_irrevelevant_ts(cls, tracker: TrackingController):
+        for i, car in enumerate(tracker.car_list):
+            if len(car.positions) < 100:
+                tracker.car_list.pop(i)
+
+        return tracker
+
+    @classmethod
+    def run(cls, video_path_list: str, parse: bool = False, maneuver: str = '', plot: bool = False, debug: bool = False):
 
         camera_list = list(
             starmap(
@@ -32,18 +41,17 @@ class Main:
 
         min_video_length = min(list(map(lambda c: c.frame_count, camera_list)))
 
-        yolo = YoloController(cameras=camera_list, debug=False)
-        lucas_kanade = TrackingController(debug=True)
+        yolo = YoloController(cameras=camera_list, debug=debug)
+        lucas_kanade = TrackingController(debug=debug)
 
-        i = 0
-        while i < min_video_length:
-            try:
-                i = i + Constants.NUMBER_OF_FRAMES
+        if not debug:
+            for _ in tqdm(range(0, min_video_length, Constants.NUMBER_OF_FRAMES)):
                 cars_list = yolo.get_cameras_images()
                 lucas_kanade.receiver(cars_list)
 
-            except KeyboardInterrupt:
-                break
+        for _ in range(Constants.NUMBER_OF_FRAMES):
+            cars_list = yolo.get_cameras_images()
+            lucas_kanade.receiver(cars_list)
 
         abstract_vehicle_list = list()
 
@@ -55,6 +63,8 @@ class Main:
                     list(map(lambda c: c.y, car.positions))
                 )
             )
+
+        lucas_kanade = cls.filter_irrevelevant_ts(lucas_kanade)
 
         if plot:
             while True:
@@ -114,6 +124,10 @@ if __name__ == '__main__':
                                      '4 files are required',
                                 required=True)
 
+    required_group.add_argument('--debug',
+                                help='Visualize a more thorough execution',
+                                action='store_true')
+
     args = parser.parse_args()
 
     if all([args.parse, args.maneuver]):
@@ -127,7 +141,8 @@ if __name__ == '__main__':
             parse=args.parse,
             maneuver=args.maneuver,
             plot=args.plot,
+            debug=args.debug
         )
 
     else:
-        raise ArgumentError('arguments [--parse, --maneuver] are mutually inclusive')
+        raise ArgumentError('if --parse is active --maneuver is required')

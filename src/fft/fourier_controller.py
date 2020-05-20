@@ -13,7 +13,7 @@ class FourierController:
         return AbstractVehicle(vehicle_id, Signal3D(cls._fft(x_sig), cls._fft(y_sig)))
 
     @classmethod
-    def _fft(cls, signal, **kwargs: bool) -> list:
+    def _fft(cls, signal, **kwargs: bool) -> np.ndarray:
         """
         This method will perform a Fast Fourier Transform over the instance 'signal' attribute.
         May contain 'plot' keyword argument in case the user wishes to plot the Fourier spectrum.
@@ -21,12 +21,12 @@ class FourierController:
         :return: Fourier spectrum
         """
 
-        points = len(signal)
-        fft_calc = np.fft.fft(signal)
-        fft_abs = np.abs(fft_calc / points)
+        rfft_calc = np.fft.rfft(signal)
+        rfft_calc[7:] = 0
+        smoothened_ts = np.fft.irfft(rfft_calc, len(rfft_calc))
 
         if kwargs.get("plot"):
-            plt.plot(fft_abs)
+            plt.plot(smoothened_ts)
             plt.show()
 
-        return fft_abs
+        return smoothened_ts

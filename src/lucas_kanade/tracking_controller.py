@@ -8,7 +8,6 @@ from logger.log import Log
 from lucas_kanade.helpers.lkconstants import LKConstants
 from lucas_kanade.helpers.real_car import RealCar
 from utils.img_car import ImgCar
-from utils.distance_calculator import DistanceCalculator
 import time
 
 
@@ -22,11 +21,14 @@ class TrackingController:
         self.SAVED_IMAGES_FOLDER = Path.joinpath(Path.cwd(), 'saved_images')
         try:
             Path.mkdir(self.SAVED_IMAGES_FOLDER)
-        except:
+
+        except FileExistsError:
             pass
 
     def receiver(self, img_car_list: List[ImgCar]):
-        self.log.i(self.TAG, f'Number of cars is {len(img_car_list)}')
+        if self.debug:
+            self.log.i(self.TAG, f'Number of cars is {len(img_car_list)}')
+
         for new_image_car in img_car_list:
             best_candidates = self.get_ordered_list(new_image_car.get_position())
             new_real_car = RealCar(new_image_car)
@@ -48,21 +50,28 @@ class TrackingController:
                                                       f'{str(new_real_car.ID)}.jpg')), new_image_car.get_image())
                 self.car_list.append(new_real_car)
 
+        self.check_tracking_cars()
+
     def get_ordered_list(self, target_position):
         list_by_distance = list()
         for index, car in enumerate(self.car_list):
             distance = target_position.get_distance(car.get_position())
-            self.log.i(self.TAG, f'Plane Distance: {distance}')
+            if self.debug:
+                self.log.i(self.TAG, f'Plane Distance: {distance}')
             if distance < LKConstants.SEARCH_THRESHOLD_ON_THE_SURFACE:
                 list_by_distance.append([index, distance])
         list_by_distance.sort(key=operator.itemgetter(1))
         return list_by_distance
 
+    def check_tracking_cars(self):
+        for index, car in enumerate(self.car_list):
+            if not car.is_tracking():
+                self.car_list.pop(index)
+
     def is_to_track(self, a_car, b_car):
-        # if DistanceCalculator.n_dim_euclidean_distance(a_car.get_features(), b_car.get_features()) \
-        #         < LKConstants.DISTANCE_TO_TRACK_THRESHOLD:
         if abs(a_car.get_features() - b_car.get_features()) < LKConstants.DISTANCE_TO_TRACK_THRESHOLD:
             return True
-        self.log.e(self.TAG,
-                   f'Grayscale Distance: {abs(a_car.get_features() - b_car.get_features())}')
+        if self.debug:
+            self.log.e(self.TAG,
+                       f'Grayscale Distance: {abs(a_car.get_features() - b_car.get_features())}')
         return False

@@ -13,6 +13,8 @@ class RealCar:
         self.TAG = 'RealCar'
         self.log = Log()
         self.ID = time.time()
+        self.tracking_counter = 10
+        self.was_detected = False
         self.positions: List[Point] = list()
         self.positions.append(img_car.get_position())
         self.features = self.get_features_from_image(img_car.get_image())
@@ -30,8 +32,16 @@ class RealCar:
         return gray_scale[0] * 0.11 + gray_scale[1] * 0.59 + gray_scale[2] * 0.3
 
     def set_new_position(self, new_position):
-        self.log.i(self.TAG, f'setting new position {new_position} for {self.ID}')
+        # self.log.i(self.TAG, f'setting new position {new_position} for {self.ID}')
         self.positions.append(new_position)
+        self.tracking_counter = 10
+        self.was_detected = True
+
+    def is_tracking(self):
+        if not self.was_detected:
+            self.tracking_counter -= 1
+        self.was_detected = False
+        return self.tracking_counter > 0
 
     def set_new_features(self, new_features):
         self.features = new_features
