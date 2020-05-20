@@ -4,7 +4,6 @@ from utils.contants import Constants
 from yolo.exceptions.exceptions import ReadFrameException
 
 
-
 class Camera:
 
     def __init__(self, camera_id, angle):

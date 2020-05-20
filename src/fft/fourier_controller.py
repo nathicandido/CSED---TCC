@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from fft.helpers.abstract_vehicle import AbstractVehicle
 from fft.helpers.signal import Signal3D
+from fft.helpers.interpolator import Interpolator
 
 
 class FourierController:
@@ -24,9 +25,10 @@ class FourierController:
         rfft_calc = np.fft.rfft(signal)
         rfft_calc[7:] = 0
         smoothened_ts = np.fft.irfft(rfft_calc, len(rfft_calc))
+        interpolated_ts = Interpolator.interpolate_time_series(smoothened_ts)
 
         if kwargs.get("plot"):
             plt.plot(smoothened_ts)
             plt.show()
 
-        return smoothened_ts
+        return interpolated_ts

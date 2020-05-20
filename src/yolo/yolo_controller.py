@@ -45,6 +45,8 @@ class YoloController:
         config_file = os.path.sep.join([self.yolo_path, 'yolov3.cfg'])
         weights_file = os.path.sep.join([self.yolo_path, 'yolov3.weights'])
         self.yolo_network = cv2.dnn.readNetFromDarknet(config_file, weights_file)
+        self.yolo_network.setPreferableTarget(cv2.dnn.DNN_TARGET_OPENCL)
+        self.yolo_network.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
         if self.debug:
             self.log.i(self.TAG, f'Labels: {labels_file}, Config: {config_file}, Weights: {weights_file}')
 

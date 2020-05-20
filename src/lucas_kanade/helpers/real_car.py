@@ -32,7 +32,6 @@ class RealCar:
         return gray_scale[0] * 0.11 + gray_scale[1] * 0.59 + gray_scale[2] * 0.3
 
     def set_new_position(self, new_position):
-        # self.log.i(self.TAG, f'setting new position {new_position} for {self.ID}')
         self.positions.append(new_position)
         self.tracking_counter = 10
         self.was_detected = True

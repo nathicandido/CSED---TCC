@@ -6,7 +6,7 @@ from itertools import starmap
 from matplotlib import pyplot as plt
 from numpy import savez, array
 from tqdm import tqdm
-from timeit import timeit
+import time
 
 from lucas_kanade.tracking_controller import TrackingController
 from utils.contants import Constants
@@ -50,9 +50,10 @@ class Main:
                 cars_list = yolo.get_cameras_images()
                 lucas_kanade.receiver(cars_list)
 
-        for _ in range(Constants.NUMBER_OF_FRAMES):
-            cars_list = yolo.get_cameras_images()
-            lucas_kanade.receiver(cars_list)
+        else:
+            for _ in range(min_video_length, Constants.NUMBER_OF_FRAMES):
+                cars_list = yolo.get_cameras_images()
+                lucas_kanade.receiver(cars_list)
 
         abstract_vehicle_list = list()
 
@@ -141,18 +142,14 @@ if __name__ == '__main__':
         if len(path_list) != 4:
             raise ArgumentError('--video_path_list must contain 4 paths')
 
-        time_ = timeit(
-            Main.run(
-                path_list,
-                parse=args.parse,
-                maneuver=args.maneuver,
-                plot=args.plot,
-                debug=args.debug,
-                dump_buffer=args.dump_buffer
-            )
+        Main.run(
+            path_list,
+            parse=args.parse,
+            maneuver=args.maneuver,
+            plot=args.plot,
+            debug=args.debug,
+            dump_buffer=args.dump_buffer
         )
-
-        print(f'Execution time {time_} seconds')
 
     else:
         raise ArgumentError('if --parse is active --maneuver is required')
