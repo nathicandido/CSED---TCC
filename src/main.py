@@ -6,6 +6,7 @@ from itertools import starmap
 from matplotlib import pyplot as plt
 from numpy import savez, array
 from tqdm import tqdm
+from timeit import timeit
 
 from lucas_kanade.tracking_controller import TrackingController
 from utils.contants import Constants
@@ -27,7 +28,7 @@ class Main:
         return tracker
 
     @classmethod
-    def run(cls, video_path_list: str, parse: bool = False, maneuver: str = '', plot: bool = False, debug: bool = False):
+    def run(cls, video_path_list, parse=False, maneuver='', plot=False, debug=False, dump_buffer=False):
 
         camera_list = list(
             starmap(
@@ -42,7 +43,7 @@ class Main:
         min_video_length = min(list(map(lambda c: c.frame_count, camera_list)))
 
         yolo = YoloController(cameras=camera_list, debug=debug)
-        lucas_kanade = TrackingController(debug=debug)
+        lucas_kanade = TrackingController(debug=debug, dump_buffer=dump_buffer)
 
         if not debug:
             for _ in tqdm(range(0, min_video_length, Constants.NUMBER_OF_FRAMES)):
@@ -118,15 +119,19 @@ if __name__ == '__main__':
                                 help='Boolean argument used for plotting a time series. Must inform --plot_index',
                                 action='store_true')
 
+    optional_group.add_argument('--debug',
+                                help='Visualize a more thorough execution',
+                                action='store_true')
+
+    optional_group.add_argument('--dump_buffer',
+                                help='Save images from frame buffer during execution',
+                                action='store_true')
+
     required_group.add_argument('--video_path_list',
                                 help='Set of paths to access the videos for processing, '
                                      'i. e.: "path/to/file/one; path/to/file/2", '
                                      '4 files are required',
                                 required=True)
-
-    required_group.add_argument('--debug',
-                                help='Visualize a more thorough execution',
-                                action='store_true')
 
     args = parser.parse_args()
 
@@ -136,13 +141,18 @@ if __name__ == '__main__':
         if len(path_list) != 4:
             raise ArgumentError('--video_path_list must contain 4 paths')
 
-        Main.run(
-            path_list,
-            parse=args.parse,
-            maneuver=args.maneuver,
-            plot=args.plot,
-            debug=args.debug
+        time_ = timeit(
+            Main.run(
+                path_list,
+                parse=args.parse,
+                maneuver=args.maneuver,
+                plot=args.plot,
+                debug=args.debug,
+                dump_buffer=args.dump_buffer
+            )
         )
+
+        print(f'Execution time {time_} seconds')
 
     else:
         raise ArgumentError('if --parse is active --maneuver is required')

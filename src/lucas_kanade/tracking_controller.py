@@ -13,9 +13,10 @@ import time
 
 class TrackingController:
 
-    def __init__(self, debug=False):
+    def __init__(self, debug=False, dump_buffer=False):
         self.TAG = 'LK'
         self.debug = debug
+        self.dump_buffer = dump_buffer
         self.log = Log()
         self.car_list: List[RealCar] = list()
         self.SAVED_IMAGES_FOLDER = Path.joinpath(Path.cwd(), 'saved_images')
@@ -36,14 +37,18 @@ class TrackingController:
                 if self.is_to_track(new_real_car, self.car_list[candidate[0]]):
                     if self.debug:
                         self.log.d(self.TAG, f'is the same car, ID {self.car_list[candidate[0]].ID}')
-                    self.car_list[candidate[0]].set_new_position(new_real_car.get_position())
-                    self.car_list[candidate[0]].set_new_features(new_real_car.get_features())
-                    cv2.imwrite(str(Path.joinpath(Path.cwd(), 'saved_images', str(self.car_list[candidate[0]].ID),
-                                                  f'{time.time()}.jpg')), new_image_car.get_image())
+
+                    if self.dump_buffer:
+                        self.car_list[candidate[0]].set_new_position(new_real_car.get_position())
+                        self.car_list[candidate[0]].set_new_features(new_real_car.get_features())
+                        cv2.imwrite(str(Path.joinpath(Path.cwd(), 'saved_images', str(self.car_list[candidate[0]].ID),
+                                                      f'{time.time()}.jpg')), new_image_car.get_image())
                     break
             else:
                 if self.debug:
                     self.log.d(self.TAG, f'is a different car, new car ID is: {new_real_car.ID}')
+
+                if self.dump_buffer:
                     if not Path.joinpath(self.SAVED_IMAGES_FOLDER, str(new_real_car.ID)).is_dir():
                         Path.mkdir(Path.joinpath(self.SAVED_IMAGES_FOLDER, str(new_real_car.ID)))
                         cv2.imwrite(str(Path.joinpath(self.SAVED_IMAGES_FOLDER, str(new_real_car.ID),
