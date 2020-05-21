@@ -1,11 +1,12 @@
 import operator
 from pathlib import Path
 from typing import List
+from os import rename
 
 import cv2
 
 from logger.log import Log
-from lucas_kanade.helpers.lkconstants import LKConstants
+from constants.general_parameters import GeneralParameters
 from lucas_kanade.helpers.real_car import RealCar
 from utils.img_car import ImgCar
 import time
@@ -35,13 +36,15 @@ class TrackingController:
             new_real_car = RealCar(new_image_car)
             for candidate in best_candidates:
                 if self.is_to_track(new_real_car, self.car_list[candidate[0]]):
+
+                    self.car_list[candidate[0]].set_new_position(new_real_car.get_position())
+                    self.car_list[candidate[0]].set_new_features(new_real_car.get_features())
+
                     if self.debug:
                         self.log.d(self.TAG, f'is the same car, ID {self.car_list[candidate[0]].ID}')
 
                     if self.dump_buffer:
-                        self.car_list[candidate[0]].set_new_position(new_real_car.get_position())
-                        self.car_list[candidate[0]].set_new_features(new_real_car.get_features())
-                        cv2.imwrite(str(Path.joinpath(Path.cwd(), 'saved_images', str(self.car_list[candidate[0]].ID),
+                        cv2.imwrite(str(Path.joinpath(self.SAVED_IMAGES_FOLDER, str(self.car_list[candidate[0]].ID),
                                                       f'{time.time()}.jpg')), new_image_car.get_image())
                     break
             else:
@@ -52,7 +55,7 @@ class TrackingController:
                     if not Path.joinpath(self.SAVED_IMAGES_FOLDER, str(new_real_car.ID)).is_dir():
                         Path.mkdir(Path.joinpath(self.SAVED_IMAGES_FOLDER, str(new_real_car.ID)))
                         cv2.imwrite(str(Path.joinpath(self.SAVED_IMAGES_FOLDER, str(new_real_car.ID),
-                                                      f'{str(new_real_car.ID)}.jpg')), new_image_car.get_image())
+                                                      f'{time.time()}.jpg')), new_image_car.get_image())
                 self.car_list.append(new_real_car)
 
         self.check_tracking_cars()
@@ -63,7 +66,7 @@ class TrackingController:
             distance = target_position.get_distance(car.get_position())
             if self.debug:
                 self.log.i(self.TAG, f'Plane Distance: {distance}')
-            if distance < LKConstants.SEARCH_THRESHOLD_ON_THE_SURFACE:
+            if distance < GeneralParameters.LK_SEARCH_THRESHOLD_ON_THE_SURFACE:
                 list_by_distance.append([index, distance])
         list_by_distance.sort(key=operator.itemgetter(1))
         return list_by_distance
@@ -71,10 +74,14 @@ class TrackingController:
     def check_tracking_cars(self):
         for index, car in enumerate(self.car_list):
             if not car.is_tracking():
+                rename(
+                    str(Path.joinpath(self.SAVED_IMAGES_FOLDER, str(car.ID))),
+                    str(Path.joinpath(self.SAVED_IMAGES_FOLDER, f'{str(car.ID)}_DELETED'))
+                )
                 self.car_list.pop(index)
 
     def is_to_track(self, a_car, b_car):
-        if abs(a_car.get_features() - b_car.get_features()) < LKConstants.DISTANCE_TO_TRACK_THRESHOLD:
+        if abs(a_car.get_features() - b_car.get_features()) < GeneralParameters.LK_DISTANCE_TO_TRACK_THRESHOLD:
             return True
         if self.debug:
             self.log.e(self.TAG,

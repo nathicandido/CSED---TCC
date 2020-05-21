@@ -14,7 +14,7 @@ from yolo.helpers.camera import Camera
 # cameras = [Camera(0)]		use the default camera, you can use the absolute path to a mp4 video
 # yolo = Yolo(cameras)
 # yolo.run()
-from yolo.helpers.yoloconstants import YOLOConstants
+from constants.general_parameters import GeneralParameters
 from yolo.helpers.frame import Frame
 from utils.img_car import ImgCar
 from utils.point import Point
@@ -45,8 +45,6 @@ class YoloController:
         config_file = os.path.sep.join([self.yolo_path, 'yolov3.cfg'])
         weights_file = os.path.sep.join([self.yolo_path, 'yolov3.weights'])
         self.yolo_network = cv2.dnn.readNetFromDarknet(config_file, weights_file)
-        self.yolo_network.setPreferableTarget(cv2.dnn.DNN_TARGET_OPENCL)
-        self.yolo_network.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
         if self.debug:
             self.log.i(self.TAG, f'Labels: {labels_file}, Config: {config_file}, Weights: {weights_file}')
 
@@ -72,7 +70,7 @@ class YoloController:
                         (x, y, w, h) = detection[0:4] * np.array([W, H, W, H])
 
                         distance = self.extract_distance_car_and_camera(H, h)
-                        if distance > YOLOConstants.MAX_DISTANCE:
+                        if distance > GeneralParameters.YOLO_MAX_DISTANCE:
                             continue
                         class_id = int(np.argmax(scores))
                         score = scores[class_id]
@@ -89,11 +87,11 @@ class YoloController:
 
     @staticmethod
     def extract_distance_car_and_camera(H, h):
-        rad = math.radians(YOLOConstants.CAMERA_APERTURE_ANGLE / (H / h))
-        return YOLOConstants.CAR_SIZE / rad
+        rad = math.radians(GeneralParameters.YOLO_CAMERA_APERTURE_ANGLE / (H / h))
+        return GeneralParameters.YOLO_CAR_SIZE / rad
 
     def extract_car_position(self, distance, camera_angle, x, W):
-        angle = (x - (W / 2)) / (W / 2) * YOLOConstants.HALF_CAMERA_APERTURE_ANGLE
+        angle = (x - (W / 2)) / (W / 2) * GeneralParameters.YOLO_HALF_CAMERA_APERTURE_ANGLE
         angle = math.radians(angle)
         adjacent_side = math.cos(angle) * distance
         opposite_side = math.sin(angle) * distance

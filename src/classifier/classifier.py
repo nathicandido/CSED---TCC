@@ -41,5 +41,3 @@ class Classifier:
         predictions = Dense(5, activation="softmax")(predictions)
 
         model = Model(inputs=[x_axis.input, y_axis.input], outputs=predictions)
-
-        model.fit()

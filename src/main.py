@@ -1,5 +1,4 @@
 """ main.py """
-import time
 from pathlib import Path
 from argparse import ArgumentParser, ArgumentError
 from itertools import starmap
@@ -9,7 +8,7 @@ from tqdm import tqdm
 import time
 
 from lucas_kanade.tracking_controller import TrackingController
-from utils.contants import Constants
+from constants.general_parameters import GeneralParameters
 from yolo.helpers.camera import Camera
 from yolo.yolo_controller import YoloController
 from fft.fourier_controller import FourierController
@@ -22,7 +21,7 @@ class Main:
     @classmethod
     def filter_irrevelevant_ts(cls, tracker: TrackingController):
         for i, car in enumerate(tracker.car_list):
-            if len(car.positions) < 100:
+            if len(car.positions) < 50:
                 tracker.car_list.pop(i)
 
         return tracker
@@ -46,18 +45,21 @@ class Main:
         lucas_kanade = TrackingController(debug=debug, dump_buffer=dump_buffer)
 
         if not debug:
-            for _ in tqdm(range(0, min_video_length, Constants.NUMBER_OF_FRAMES)):
+            for _ in tqdm(range(0, min_video_length, GeneralParameters.NUMBER_OF_FRAMES)):
                 cars_list = yolo.get_cameras_images()
                 lucas_kanade.receiver(cars_list)
 
         else:
-            for _ in range(min_video_length, Constants.NUMBER_OF_FRAMES):
+            for _ in range(0, min_video_length, GeneralParameters.NUMBER_OF_FRAMES):
                 cars_list = yolo.get_cameras_images()
                 lucas_kanade.receiver(cars_list)
+
+        lucas_kanade = cls.filter_irrevelevant_ts(lucas_kanade)
 
         abstract_vehicle_list = list()
 
         for car in lucas_kanade.car_list:
+            print(car.ID)
             abstract_vehicle_list.append(
                 FourierController.build_abstract_vehicle(
                     car.ID,
@@ -65,8 +67,6 @@ class Main:
                     list(map(lambda c: c.y, car.positions))
                 )
             )
-
-        lucas_kanade = cls.filter_irrevelevant_ts(lucas_kanade)
 
         if plot:
             while True:

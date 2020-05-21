@@ -33,7 +33,7 @@ class RealCar:
 
     def set_new_position(self, new_position):
         self.positions.append(new_position)
-        self.tracking_counter = 10
+        self.tracking_counter = 25
         self.was_detected = True
 
     def is_tracking(self):

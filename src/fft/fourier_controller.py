@@ -24,7 +24,7 @@ class FourierController:
 
         rfft_calc = np.fft.rfft(signal)
         rfft_calc[7:] = 0
-        smoothened_ts = np.fft.irfft(rfft_calc, len(rfft_calc))
+        smoothened_ts = np.fft.irfft(rfft_calc, len(signal))
         interpolated_ts = Interpolator.interpolate_time_series(smoothened_ts)
 
         if kwargs.get("plot"):

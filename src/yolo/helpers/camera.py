@@ -1,6 +1,6 @@
 import cv2
 
-from utils.contants import Constants
+from constants.general_parameters import GeneralParameters
 from yolo.exceptions.exceptions import ReadFrameException
 
 
@@ -18,7 +18,7 @@ class Camera:
         status, image = self.video_capture.read()
         if not status:
             raise ReadFrameException('Problems to read {}'.format(self.camera_id))
-        self.pointer += Constants.NUMBER_OF_FRAMES
+        self.pointer += GeneralParameters.NUMBER_OF_FRAMES
         self.video_capture.set(cv2.CAP_PROP_POS_FRAMES, self.pointer)
         return image
 
