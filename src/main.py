@@ -16,7 +16,7 @@ from fft.fourier_controller import FourierController
 
 class Main:
     ANGLE_LIST = [0, 90, 180, 270]
-    PARSED_FILES_PATH = Path.joinpath(Path.cwd(), '..', 'assets', 'parsed')
+    PARSED_FILES_PATH = Path.joinpath(Path.cwd(), '..', 'dataset', 'parsed')
 
     @classmethod
     def filter_irrevelevant_ts(cls, tracker: TrackingController):
