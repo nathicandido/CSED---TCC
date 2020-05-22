@@ -21,7 +21,7 @@ class Main:
     @classmethod
     def filter_irrevelevant_ts(cls, tracker: TrackingController):
         for i, car in enumerate(tracker.car_list):
-            if len(car.positions) < 50:
+            if len(car.positions) < GeneralParameters.INSUFFICIENT_TIME_SERIES_LENGTH:
                 tracker.car_list.pop(i)
 
         return tracker
@@ -59,7 +59,6 @@ class Main:
         abstract_vehicle_list = list()
 
         for car in lucas_kanade.car_list:
-            print(car.ID)
             abstract_vehicle_list.append(
                 FourierController.build_abstract_vehicle(
                     car.ID,

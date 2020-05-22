@@ -6,6 +6,7 @@ import numpy
 from logger.log import Log
 from utils.point import Point
 from utils.img_car import ImgCar
+from constants.general_parameters import GeneralParameters
 
 
 class RealCar:
@@ -33,7 +34,7 @@ class RealCar:
 
     def set_new_position(self, new_position):
         self.positions.append(new_position)
-        self.tracking_counter = 25
+        self.tracking_counter = GeneralParameters.LK_CAR_DETECTION_COUNTER
         self.was_detected = True
 
     def is_tracking(self):
