@@ -1,6 +1,10 @@
+from pathlib import Path
+
+
 class GeneralParameters:
     NUMBER_OF_FRAMES = 4
     INSUFFICIENT_TIME_SERIES_LENGTH = 35
+    SAVED_IMAGES_FOLDER = Path.joinpath(Path.cwd(), 'saved_images')
 
     YOLO_CAMERA_APERTURE_ANGLE = 68
     YOLO_HALF_CAMERA_APERTURE_ANGLE = YOLO_CAMERA_APERTURE_ANGLE / 2

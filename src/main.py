@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 from numpy import savez, array
 from tqdm import tqdm
 import time
+from os import rename
 
 from lucas_kanade.tracking_controller import TrackingController
 from constants.general_parameters import GeneralParameters
@@ -19,15 +20,25 @@ class Main:
     PARSED_FILES_PATH = Path.joinpath(Path.cwd(), '..', 'dataset', 'parsed')
 
     @classmethod
-    def filter_irrevelevant_ts(cls, tracker: TrackingController):
+    def filter_irrevelevant_ts(cls, tracker: TrackingController, maneuver_dataset_index):
         for i, car in enumerate(tracker.car_list):
             if len(car.positions) < GeneralParameters.INSUFFICIENT_TIME_SERIES_LENGTH:
+                try:
+                    rename(
+                        str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER,
+                                          f'{str(car.ID)}-idx_{maneuver_dataset_index}')),
+                        str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER,
+                                          f'{str(car.ID)}-idx_{maneuver_dataset_index}_DELETED'))
+                    )
+
+                except FileNotFoundError:
+                    pass
                 tracker.car_list.pop(i)
 
         return tracker
 
     @classmethod
-    def run(cls, video_path_list, parse=False, maneuver='', plot=False, debug=False, dump_buffer=False):
+    def run(cls, video_path_list, parse=False, maneuver='', maneuver_dataset_index=0, plot=False, debug=False, dump_buffer=False):
 
         camera_list = list(
             starmap(
@@ -42,7 +53,7 @@ class Main:
         min_video_length = min(list(map(lambda c: c.frame_count, camera_list)))
 
         yolo = YoloController(cameras=camera_list, debug=debug)
-        lucas_kanade = TrackingController(debug=debug, dump_buffer=dump_buffer)
+        lucas_kanade = TrackingController(debug=debug, dump_buffer=dump_buffer, maneuver_dataset_index=maneuver_dataset_index)
 
         if not debug:
             for _ in tqdm(range(0, min_video_length, GeneralParameters.NUMBER_OF_FRAMES)):
@@ -54,7 +65,7 @@ class Main:
                 cars_list = yolo.get_cameras_images()
                 lucas_kanade.receiver(cars_list)
 
-        lucas_kanade = cls.filter_irrevelevant_ts(lucas_kanade)
+        lucas_kanade = cls.filter_irrevelevant_ts(lucas_kanade, maneuver_dataset_index)
 
         abstract_vehicle_list = list()
 
@@ -92,7 +103,7 @@ class Main:
             for car in abstract_vehicle_list:
                 savez(
                     f'{current_parse_folder}/'
-                    f'{maneuver.upper()}_{str(car.vehicle_id).replace(".", "_")}.npz',
+                    f'{maneuver.upper()}_{str(car.vehicle_id).replace(".", "_")}-idx_{maneuver_dataset_index}.npz',
                     label=array([maneuver.upper()]),
                     x_sig=car.signal.x_sig,
                     y_sig=car.signal.y_sig
@@ -138,6 +149,7 @@ if __name__ == '__main__':
     if all([args.parse, args.maneuver]):
 
         path_list = args.video_path_list.split(';')
+        maneuver_dataset_index = path_list[0].split('/')[-2].split('_')[-1]
         if len(path_list) != 4:
             raise ArgumentError('--video_path_list must contain 4 paths')
 
@@ -145,6 +157,7 @@ if __name__ == '__main__':
             path_list,
             parse=args.parse,
             maneuver=args.maneuver,
+            maneuver_dataset_index=maneuver_dataset_index,
             plot=args.plot,
             debug=args.debug,
             dump_buffer=args.dump_buffer

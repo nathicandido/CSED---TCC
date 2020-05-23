@@ -14,15 +14,16 @@ import time
 
 class TrackingController:
 
-    def __init__(self, debug=False, dump_buffer=False):
+    def __init__(self, debug=False, dump_buffer=False, maneuver_dataset_index=0):
         self.TAG = 'LK'
         self.debug = debug
         self.dump_buffer = dump_buffer
         self.log = Log()
         self.car_list: List[RealCar] = list()
-        self.SAVED_IMAGES_FOLDER = Path.joinpath(Path.cwd(), 'saved_images')
+        if self.dump_buffer:
+            self.maneuver_dataset_index = maneuver_dataset_index
         try:
-            Path.mkdir(self.SAVED_IMAGES_FOLDER)
+            Path.mkdir(GeneralParameters.SAVED_IMAGES_FOLDER)
 
         except FileExistsError:
             pass
@@ -44,7 +45,7 @@ class TrackingController:
                         self.log.d(self.TAG, f'is the same car, ID {self.car_list[candidate[0]].ID}')
 
                     if self.dump_buffer:
-                        cv2.imwrite(str(Path.joinpath(self.SAVED_IMAGES_FOLDER, str(self.car_list[candidate[0]].ID),
+                        cv2.imwrite(str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER, f'{str(self.car_list[candidate[0]].ID)}-idx_{self.maneuver_dataset_index}',
                                                       f'{time.time()}.jpg')), new_image_car.get_image())
                     break
             else:
@@ -52,9 +53,9 @@ class TrackingController:
                     self.log.d(self.TAG, f'is a different car, new car ID is: {new_real_car.ID}')
 
                 if self.dump_buffer:
-                    if not Path.joinpath(self.SAVED_IMAGES_FOLDER, str(new_real_car.ID)).is_dir():
-                        Path.mkdir(Path.joinpath(self.SAVED_IMAGES_FOLDER, str(new_real_car.ID)))
-                        cv2.imwrite(str(Path.joinpath(self.SAVED_IMAGES_FOLDER, str(new_real_car.ID),
+                    if not Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER, str(new_real_car.ID)).is_dir():
+                        Path.mkdir(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER, f'{str(new_real_car.ID)}-idx_{self.maneuver_dataset_index}'))
+                        cv2.imwrite(str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER, f'{str(new_real_car.ID)}-idx_{self.maneuver_dataset_index}',
                                                       f'{time.time()}.jpg')), new_image_car.get_image())
                 self.car_list.append(new_real_car)
 
@@ -74,10 +75,16 @@ class TrackingController:
     def check_tracking_cars(self):
         for index, car in enumerate(self.car_list):
             if not car.is_tracking():
-                rename(
-                    str(Path.joinpath(self.SAVED_IMAGES_FOLDER, str(car.ID))),
-                    str(Path.joinpath(self.SAVED_IMAGES_FOLDER, f'{str(car.ID)}_DELETED'))
-                )
+                if self.debug:
+                    self.log.w(self.TAG, f'Car {car.ID} was lost, deleting time series')
+                try:
+                    rename(
+                        str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER, f'{str(car.ID)}-idx_{self.maneuver_dataset_index}')),
+                        str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER, f'{str(car.ID)}-idx_{self.maneuver_dataset_index}_DELETED'))
+                    )
+
+                except FileNotFoundError:
+                    pass
                 self.car_list.pop(index)
 
     def is_to_track(self, a_car, b_car):
