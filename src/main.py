@@ -26,9 +26,9 @@ class Main:
                 try:
                     rename(
                         str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER,
-                                          f'{str(car.ID)}-idx_{maneuver_dataset_index}')),
+                                          f'idx_{maneuver_dataset_index}-{str(car.ID)}')),
                         str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER,
-                                          f'{str(car.ID)}-idx_{maneuver_dataset_index}_DELETED'))
+                                          f'idx_{maneuver_dataset_index}-{str(car.ID)}_DELETED'))
                     )
 
                 except FileNotFoundError:
