@@ -52,24 +52,33 @@ class Main:
 
         min_video_length = min(list(map(lambda c: c.frame_count, camera_list)))
 
+        received_ts = list()
         yolo = YoloController(cameras=camera_list, debug=debug)
         lucas_kanade = TrackingController(debug=debug, dump_buffer=dump_buffer, maneuver_dataset_index=maneuver_dataset_index)
 
         if not debug:
             for _ in tqdm(range(0, min_video_length, GeneralParameters.NUMBER_OF_FRAMES)):
                 cars_list = yolo.get_cameras_images()
-                lucas_kanade.receiver(cars_list)
+                received_ts.extend(lucas_kanade.receiver(cars_list))
 
         else:
             for _ in range(0, min_video_length, GeneralParameters.NUMBER_OF_FRAMES):
                 cars_list = yolo.get_cameras_images()
-                lucas_kanade.receiver(cars_list)
+                received_ts.extend(lucas_kanade.receiver(cars_list))
 
         lucas_kanade = cls.filter_irrevelevant_ts(lucas_kanade, maneuver_dataset_index)
 
         abstract_vehicle_list = list()
 
         for car in lucas_kanade.car_list:
+            abstract_vehicle_list.append(
+                FourierController.build_abstract_vehicle(
+                    car.ID,
+                    list(map(lambda c: c.x, car.positions)),
+                    list(map(lambda c: c.y, car.positions))
+                )
+            )
+        for car in received_ts:
             abstract_vehicle_list.append(
                 FourierController.build_abstract_vehicle(
                     car.ID,

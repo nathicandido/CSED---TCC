@@ -59,7 +59,7 @@ class TrackingController:
                                                       f'{time.time()}.jpg')), new_image_car.get_image())
                 self.car_list.append(new_real_car)
 
-        self.check_tracking_cars()
+        return self.check_tracking_cars()
 
     def get_ordered_list(self, target_position):
         list_by_distance = list()
@@ -73,19 +73,32 @@ class TrackingController:
         return list_by_distance
 
     def check_tracking_cars(self):
+        finalized_ts = list()
         for index, car in enumerate(self.car_list):
             if not car.is_tracking():
+                message = 'deleting time series'
+                folder = 'DELETED'
+
+                if car.positions < GeneralParameters.INSUFFICIENT_TIME_SERIES_LENGTH:
+                    self.car_list.pop(index)
+                else:
+                    message = 'but have a good time series'
+                    folder = 'SAVED'
+                    finalized_ts = self.car_list.pop(index)
+
                 if self.debug:
-                    self.log.w(self.TAG, f'Car {car.ID} was lost, deleting time series')
+                    self.log.w(self.TAG, f'Car {car.ID} was lost, {message}')
                 try:
                     rename(
-                        str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER, f'idx_{self.maneuver_dataset_index}-{str(car.ID)}')),
-                        str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER, f'idx_{self.maneuver_dataset_index}-{str(car.ID)}_DELETED'))
+                        str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER,
+                                          f'idx_{self.maneuver_dataset_index}-{str(car.ID)}')),
+                        str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER,
+                                          f'idx_{self.maneuver_dataset_index}-{str(car.ID)}_{folder}'))
                     )
-
                 except FileNotFoundError:
                     pass
-                self.car_list.pop(index)
+
+        return finalized_ts
 
     def is_to_track(self, a_car, b_car):
         if abs(a_car.get_features() - b_car.get_features()) < GeneralParameters.LK_DISTANCE_TO_TRACK_THRESHOLD:
