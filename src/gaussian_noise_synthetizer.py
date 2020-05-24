@@ -38,7 +38,7 @@ class GaussianNoiseSynthetizer:
 
     def serialize_dataset(self, array):
         date = datetime.now().strftime('%d_%m_%Y-%H_%M_%S')
-        with open(f'{self.TARGET_TO_FULL_DATASET}_{date}.pkl', self.PICKLE_OPENING_MODE) as pkl_in:
+        with open(f'{self.TARGET_TO_FULL_DATASET}_{self.class_}_{date}.pkl', self.PICKLE_OPENING_MODE) as pkl_in:
             pkl.dump(array, pkl_in)
 
     @staticmethod
