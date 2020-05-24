@@ -1,6 +1,6 @@
 from tensorflow import ConfigProto, Session
 from keras import Input, backend
-from keras.layers import Dense, concatenate, Activation
+from keras.layers import Dense, concatenate, LeakyReLU, Activation
 from keras.models import Model
 from keras.utils.generic_utils import get_custom_objects
 
@@ -9,10 +9,12 @@ class Classifier:
 
     def __init__(self):
 
-        def swish(x, beta=1):
-            return x * backend.sigmoid(beta * x)
+        def leaky_relu(x, alpha=0.01):
+            if x < 0:
+                return x * alpha
+            return x
 
-        get_custom_objects().update(dict(swish=Activation(swish)))
+        get_custom_objects().update(dict(leaky_relu=Activation(leaky_relu)))
 
         config = ConfigProto(device_count=dict(GPU=1, CPU=2))
         sess = Session(config=config)
@@ -24,20 +26,17 @@ class Classifier:
     @classmethod
     def run(cls):
 
-        input_x = Input(shape=(32,))
-        input_y = Input(shape=(32,))
+        input_x = Input(shape=(100,))
+        input_y = Input(shape=(100,))
 
-        x_axis = Dense(8, activation="swish")(input_x)
-        x_axis = Dense(4, activation="swish")(x_axis)
+        x_axis = Dense(50, activation='leaky_relu')
         x_axis = Model(inputs=input_x, outputs=x_axis)
 
-        y_axis = Dense(8, activation="swish")(input_y)
-        y_axis = Dense(4, activation="swish")(y_axis)
+        y_axis = Dense(50, activation='leaky_relu')
         y_axis = Model(inputs=input_y, outputs=y_axis)
 
         combined = concatenate([x_axis.output, y_axis.output])
 
-        predictions = Dense(10, activation="swish")(combined)
-        predictions = Dense(5, activation="softmax")(predictions)
+        predictions = Dense(4, activation="softmax")(combined)
 
         model = Model(inputs=[x_axis.input, y_axis.input], outputs=predictions)
