@@ -11,13 +11,20 @@ class FourierController:
 
     @classmethod
     def build_abstract_vehicle(cls, vehicle_id: str, x_sig: list, y_sig: list) -> AbstractVehicle:
-        return AbstractVehicle(vehicle_id, Signal3D(cls._fft(x_sig), cls._fft(y_sig)))
+        return AbstractVehicle(
+            vehicle_id,
+            Signal3D(
+                cls.smoothen_and_interpolate(x_sig),
+                cls.smoothen_and_interpolate(y_sig)
+            )
+        )
 
     @classmethod
-    def _fft(cls, signal, **kwargs: bool) -> np.ndarray:
+    def smoothen_and_interpolate(cls, signal, **kwargs: bool) -> np.ndarray:
         """
         This method will perform a Fast Fourier Transform over the instance 'signal' attribute.
         May contain 'plot' keyword argument in case the user wishes to plot the Fourier spectrum.
+        :param signal:
         :param kwargs: keyword arguments (Optional: ['plot'])
         :return: Fourier spectrum
         """
