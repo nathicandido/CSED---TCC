@@ -5,24 +5,31 @@ import pickle as pkl
 from datetime import datetime
 from pathlib import Path
 from fft.fourier_controller import FourierController
+from json_dataset_builder import JSONDatasetBuilder
 
 
 class GaussianNoiseSynthetizer:
 
-    PATH_TO_PARSED = str(Path.joinpath(Path.cwd(), 'dataset', 'parsed'))
-    TARGET_TO_FULL_DATASET = str(Path.joinpath(Path.cwd(), 'dataset', 'ready_for_training'))
+    PATH_TO_PARSED = str(Path.joinpath(Path.cwd(), '..', 'dataset', 'parsed'))
+    TARGET_TO_FULL_DATASET = str(Path.joinpath(Path.cwd(), '..', 'dataset', 'ready_for_training'))
+
     CLASS_ARRAY_X_KEY = 'x_sig'
     CLASS_ARRAY_Y_KEY = 'y_sig'
+    CLASS_ARRAY_LABEL_KEY = 'label'
+
     PICKLE_OPENING_MODE = 'wb'
     LEGEND_PLOT_LOCATION = 'best'
 
     def __init__(self):
         self.arrays = [
-            np.load(f) for f in self.PATH_TO_PARSED
+            np.load(f) for f in self.absolute_file_paths(self.PATH_TO_PARSED)
         ]
 
-        self.x_sig_group = map(lambda a: a[self.CLASS_ARRAY_X_KEY], self.arrays)
-        self.y_sig_group = map(lambda a: a[self.CLASS_ARRAY_Y_KEY], self.arrays)
+        self.x_sig_group = list(map(lambda a: a[self.CLASS_ARRAY_X_KEY], self.arrays))
+        self.y_sig_group = list(map(lambda a: a[self.CLASS_ARRAY_Y_KEY], self.arrays))
+        self.label_group = map(lambda a: a[self.CLASS_ARRAY_LABEL_KEY], self.arrays)
+
+        self.class_ = next(self.label_group)[0]
 
         x_pos_group = [pos for pos in zip(*self.x_sig_group)]
         y_pos_group = [pos for pos in zip(*self.y_sig_group)]
@@ -30,7 +37,8 @@ class GaussianNoiseSynthetizer:
         self.consolidate = [(x, y) for x, y in zip(x_pos_group, y_pos_group)]
 
     def serialize_dataset(self, array):
-        with open(f'{self.TARGET_TO_FULL_DATASET}_{datetime.now()}.pkl', self.PICKLE_OPENING_MODE) as pkl_in:
+        date = datetime.now().strftime('%d_%m_%Y-%H_%M_%S')
+        with open(f'{self.TARGET_TO_FULL_DATASET}_{date}.pkl', self.PICKLE_OPENING_MODE) as pkl_in:
             pkl.dump(array, pkl_in)
 
     @staticmethod
@@ -112,6 +120,11 @@ class GaussianNoiseSynthetizer:
 
         return sm_gaussian_x, sm_gaussian_y
 
+    def run(self):
+        smg_x, smg_y = self.generate_gaussian_noise_from_class_arrays()
+        data = JSONDatasetBuilder.build_json_for_training(smg_x, smg_y, self.class_)
+        self.serialize_dataset(data)
+
 
 if __name__ == '__main__':
-    pass
+    GaussianNoiseSynthetizer().run()
