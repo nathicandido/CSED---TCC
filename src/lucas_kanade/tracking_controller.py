@@ -79,12 +79,12 @@ class TrackingController:
                 message = 'deleting time series'
                 folder = 'DELETED'
 
-                if car.positions < GeneralParameters.INSUFFICIENT_TIME_SERIES_LENGTH:
+                if len(car.positions) < GeneralParameters.INSUFFICIENT_TIME_SERIES_LENGTH:
                     self.car_list.pop(index)
                 else:
                     message = 'but have a good time series'
                     folder = 'SAVED'
-                    finalized_ts = self.car_list.pop(index)
+                    finalized_ts.append(self.car_list.pop(index))
 
                 if self.debug:
                     self.log.w(self.TAG, f'Car {car.ID} was lost, {message}')
