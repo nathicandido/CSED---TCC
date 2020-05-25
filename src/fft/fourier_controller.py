@@ -35,7 +35,7 @@ class FourierController:
         interpolated_ts = Interpolator.interpolate_time_series(smoothened_ts)
 
         if kwargs.get("plot"):
-            plt.plot(smoothened_ts)
+            plt.plot(interpolated_ts)
             plt.show()
 
         return interpolated_ts
