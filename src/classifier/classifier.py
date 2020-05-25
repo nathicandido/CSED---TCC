@@ -67,7 +67,7 @@ class Classifier:
     def get_dataset(cls):
         with open(os.path.join(os.getcwd(), '..', 'dataset', 'ready_for_training.pkl'), 'rb') as f:
             data = pkl.load(f)
-            labels = {"SWERVING": [1, 0, 0, 0],
+            labels = {"SWERVING": np.array([1, 0, 0, 0]),
                       "ULTRAPASSA": [0, 1, 0, 0],
                       "FALSAULTRAPASSA": [0, 0, 1, 0],
                       "MUDAFAIXA": [0, 0, 0, 1]}
@@ -93,8 +93,8 @@ class Classifier:
 
     @classmethod
     def split_dataset(cls, train_index, test_index, dataset, labels):
-        train_dataset, train_labels = [(dataset[index], labels[index]) for index in train_index]
-        test_dataset, test_labels = [(dataset[index], labels[index]) for index in test_index]
+        train_dataset, train_labels = [(np.array(dataset[index]), np.array(labels[index])) for index in train_index]
+        test_dataset, test_labels = [(np.array(dataset[index]), np.array(labels[index])) for index in test_index]
         return train_dataset, train_labels, test_dataset, test_labels
 
 
