@@ -89,12 +89,13 @@ class TrackingController:
                 if self.debug:
                     self.log.w(self.TAG, f'Car {car.ID} was lost, {message}')
                 try:
-                    rename(
-                        str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER,
-                                          f'idx_{self.maneuver_dataset_index}-{str(car.ID)}')),
-                        str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER,
-                                          f'idx_{self.maneuver_dataset_index}-{str(car.ID)}_{folder}'))
-                    )
+                    if self.dump_buffer:
+                        rename(
+                            str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER,
+                                              f'idx_{self.maneuver_dataset_index}-{str(car.ID)}')),
+                            str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER,
+                                              f'idx_{self.maneuver_dataset_index}-{str(car.ID)}_{folder}'))
+                        )
                 except FileNotFoundError:
                     pass
 

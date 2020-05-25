@@ -10,10 +10,6 @@ from logger.log import Log
 from yolo.helpers.bounding_box import BoundingBox
 from yolo.helpers.camera import Camera
 
-# ----------HOW TO----------
-# cameras = [Camera(0)]		use the default camera, you can use the absolute path to a mp4 video
-# yolo = Yolo(cameras)
-# yolo.run()
 from constants.general_parameters import GeneralParameters
 from yolo.helpers.frame import Frame
 from utils.img_car import ImgCar
@@ -27,7 +23,6 @@ class YoloController:
     labels = None
     yolo_network = None
     LABELS_TO_DETECT = [2, 3, 5, 6, 7]  # [Car, Motorbike, Bus, Train, Truck]
-    CONFIDENCE = 0.50
     frame = None
 
     def __init__(self, cameras: List[Camera], yolo_path=os.path.join(os.getcwd(), 'yolo', 'resources', 'yolo-coco'),
@@ -66,7 +61,7 @@ class YoloController:
             for output in layer_outputs:
                 for detection in output:
                     scores = detection[5:]
-                    if np.argmax(scores) in self.LABELS_TO_DETECT and scores[np.argmax(scores)] > self.CONFIDENCE:
+                    if np.argmax(scores) in self.LABELS_TO_DETECT and scores[np.argmax(scores)] > GeneralParameters.YOLO_CONFIDENCE:
                         (x, y, w, h) = detection[0:4] * np.array([W, H, W, H])
 
                         distance = self.extract_distance_car_and_camera(H, h)

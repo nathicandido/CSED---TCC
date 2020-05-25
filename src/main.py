@@ -156,9 +156,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if all([args.parse, args.maneuver]):
-
         path_list = args.video_path_list.split(';')
-        maneuver_dataset_index = path_list[0].split('/')[-2].split('_')[-1]
+        maneuver_dataset_index = path_list[0].split('/')[-2].split('-')[-1]
         if len(path_list) != 4:
             raise ArgumentError('--video_path_list must contain 4 paths')
 

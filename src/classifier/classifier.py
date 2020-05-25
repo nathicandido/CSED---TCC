@@ -1,42 +1,52 @@
-from tensorflow import ConfigProto, Session
-from keras import Input, backend
-from keras.layers import Dense, concatenate, LeakyReLU, Activation
-from keras.models import Model
+from keras import backend
+from keras.layers import Dense, Activation, Flatten, Dropout, LeakyReLU
+from keras.models import Sequential
+from keras.optimizers import SGD
 from keras.utils.generic_utils import get_custom_objects
+from tensorflow import ConfigProto, Session, function
+import keras
+import numpy as np
 
 
 class Classifier:
 
     def __init__(self):
-
+        @function
         def leaky_relu(x, alpha=0.01):
-            if x < 0:
-                return x * alpha
+            print(f'(Func = {x.op}')
+            if x.op < 0:
+                x.op = x.op * alpha
+                return x
             return x
 
         get_custom_objects().update(dict(leaky_relu=Activation(leaky_relu)))
 
         config = ConfigProto(device_count=dict(GPU=1, CPU=2))
         sess = Session(config=config)
-
-        backend.set_session(sess)
         self.run()
+        backend.set_session(sess)
         backend.clear_session()
 
     @classmethod
     def run(cls):
 
-        input_x = Input(shape=(100,))
-        input_y = Input(shape=(100,))
+        # full_array = np.array([np.array([x, y]) for x, y in zip(arr_x, arr_y)])
+        # result = np.array([[1, 0, 0, 0], [0, 0, 0, 1], [0, 1, 0, 0], [1, 0, 0, 0], [0, 0, 1, 0]])
+        # full_test = np.array([np.array([x, y]) for x, y in zip(test_x, test_y)])
 
-        x_axis = Dense(50, activation='leaky_relu')
-        x_axis = Model(inputs=input_x, outputs=x_axis)
+        # Creating 4 Layers (2*100, 2*52, 2*26, 4)
+        classifier = Sequential()
+        classifier.add(LeakyReLU(alpha=0.3, input_shape=(2, 100)))
+        classifier.add(Dense(units=52, activation="relu"))
+        classifier.add(Dense(units=26, activation="relu"))
+        classifier.add(Flatten())
 
-        y_axis = Dense(50, activation='leaky_relu')
-        y_axis = Model(inputs=input_y, outputs=y_axis)
+        classifier.add(Dense(units=4, activation="softmax"))
+        classifier.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
 
-        combined = concatenate([x_axis.output, y_axis.output])
+        # classifier.fit(TRAINNING, RESULTS, batch_size=1, epochs=10)
 
-        predictions = Dense(4, activation="softmax")(combined)
+        # classifier.predict(TEST))
 
-        model = Model(inputs=[x_axis.input, y_axis.input], outputs=predictions)
+if __name__ == '__main__':
+    Classifier()
