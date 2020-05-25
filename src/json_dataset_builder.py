@@ -1,15 +1,24 @@
 class JSONDatasetBuilder:
 
     @classmethod
-    def build_json_for_training(cls, array_x, array_y, label):
+    def build_json_from_patterns(cls, patterns):
         data = list()
-        for x_matrix, y_matrix in zip(array_x, array_y):
-            for x_sig, y_sig in zip(x_matrix, y_matrix):
+        for pattern in patterns:
+            try:
+                for cp in pattern:
+                    data.append(
+                        dict(
+                            x_sig=cp.x_sig,
+                            y_sig=cp.y_sig,
+                            label=cp.label
+                        )
+                    )
+            except TypeError:  # Getting original classed patterns
                 data.append(
                     dict(
-                        x_sig=x_sig,
-                        y_sig=y_sig,
-                        label=label
+                        x_sig=pattern.x_sig,
+                        y_sig=pattern.y_sig,
+                        label=pattern.label
                     )
                 )
 
