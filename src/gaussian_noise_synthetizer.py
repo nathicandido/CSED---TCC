@@ -1,15 +1,31 @@
 import numpy as np
 import os
-import matplotlib.pyplot as plt
 import pickle as pkl
-from datetime import datetime
+import itertools as it
 from pathlib import Path
 from fft.fourier_controller import FourierController
 from json_dataset_builder import JSONDatasetBuilder
 
 
-class GaussianNoiseSynthetizer:
+class ClassedPattern:
+    def __init__(self, x_sig, y_sig, label):
+        self.x_sig = x_sig
+        self.y_sig = y_sig
+        self.label = label
 
+    def __repr__(self):
+        return f'<ClassedPattern: {self.label}>'
+
+
+class SynthetizedClassedPattern(ClassedPattern):
+    def __init__(self, x_sig, y_sig, label):
+        super().__init__(x_sig, y_sig, label)
+
+    def __repr__(self):
+        return f'<SynthetizedClassedPattern: {self.label}>'
+
+
+class GaussianNoiseSynthetizer:
     PATH_TO_PARSED = str(Path.joinpath(Path.cwd(), '..', 'dataset', 'parsed'))
     TARGET_TO_FULL_DATASET = str(Path.joinpath(Path.cwd(), '..', 'dataset', 'ready_for_training'))
 
@@ -18,27 +34,25 @@ class GaussianNoiseSynthetizer:
     CLASS_ARRAY_LABEL_KEY = 'label'
 
     PICKLE_OPENING_MODE = 'wb'
-    LEGEND_PLOT_LOCATION = 'best'
 
     def __init__(self):
         self.arrays = [
             np.load(f) for f in self.absolute_file_paths(self.PATH_TO_PARSED)
         ]
 
-        self.x_sig_group = list(map(lambda a: a[self.CLASS_ARRAY_X_KEY], self.arrays))
-        self.y_sig_group = list(map(lambda a: a[self.CLASS_ARRAY_Y_KEY], self.arrays))
-        self.label_group = map(lambda a: a[self.CLASS_ARRAY_LABEL_KEY], self.arrays)
+        x_sig_group = map(lambda a: a[self.CLASS_ARRAY_X_KEY], self.arrays)
+        y_sig_group = map(lambda a: a[self.CLASS_ARRAY_Y_KEY], self.arrays)
+        label_group = map(lambda a: a[self.CLASS_ARRAY_LABEL_KEY], self.arrays)
 
-        self.class_ = next(self.label_group)[0]
-
-        x_pos_group = [pos for pos in zip(*self.x_sig_group)]
-        y_pos_group = [pos for pos in zip(*self.y_sig_group)]
-
-        self.consolidate = [(x, y) for x, y in zip(x_pos_group, y_pos_group)]
+        self.classed_patterns, self.classed_patterns_bkp = it.tee(
+            it.starmap(
+                lambda x, y, l: ClassedPattern(x_sig=x, y_sig=y, label=l),
+                zip(x_sig_group, y_sig_group, label_group)
+            )
+        )
 
     def serialize_dataset(self, array):
-        date = datetime.now().strftime('%d_%m_%Y-%H_%M_%S')
-        with open(f'{self.TARGET_TO_FULL_DATASET}_{self.class_}_{date}.pkl', self.PICKLE_OPENING_MODE) as pkl_in:
+        with open(f'{self.TARGET_TO_FULL_DATASET}.pkl', self.PICKLE_OPENING_MODE) as pkl_in:
             pkl.dump(array, pkl_in)
 
     @staticmethod
@@ -48,82 +62,41 @@ class GaussianNoiseSynthetizer:
                 yield os.path.abspath(os.path.join(dirpath, file))
 
     @staticmethod
-    def generate_gaussian_noise(n, scale, signal_):
-        gaussian_noise = [[p + n for p, n in zip(signal_, np.random.normal(0, scale, 100))] for _ in range(n)]
-        return gaussian_noise
+    def generate_n_gaussian_samples_from_unit(n, scale_x, scale_y, classed_pattern):
 
-    def get_mean_array(self):
-        mean_arr_x = list()
-        mean_arr_y = list()
+        data = list()
 
-        for c in self.consolidate:
-            mean_arr_x.append(sum(c[0]) / len(c[0]))
-            mean_arr_y.append(sum(c[1]) / len(c[1]))
+        for _ in range(n):
+            x_noise = [x + gss for gss, x in zip(np.random.normal(0, scale_x, 100), classed_pattern.x_sig)]
+            y_noise = [y + gss for gss, y in zip(np.random.normal(0, scale_y, 100), classed_pattern.y_sig)]
 
-        return mean_arr_x, mean_arr_y
+            data.append(SynthetizedClassedPattern(x_sig=x_noise, y_sig=y_noise, label=classed_pattern.label))
 
-    def generate_gaussian_noise_from_mean(self, samples=100, plot=False):
-        mean_x, mean_y = self.get_mean_array()
+        return data
 
-        gaussian_noise_x = self.generate_gaussian_noise(n=samples, scale=1, signal_=mean_x)
-        gaussian_noise_y = self.generate_gaussian_noise(n=samples, scale=2, signal_=mean_y)
+    def generate_gaussian_samples_from_classed_patterns(self, n=100, scale_x=1, scale_y=.5):
+        synth_classed_patterns_from_gaussian = [
+            self.generate_n_gaussian_samples_from_unit(n=n, scale_x=scale_x, scale_y=scale_y, classed_pattern=cp)
+            for cp in self.classed_patterns
+        ]
 
-        if plot:
-            for a in self.x_sig_group:
-                plt.plot(a)
+        for pattern in synth_classed_patterns_from_gaussian:
+            for cp in pattern:
+                cp.x_sig = FourierController.smoothen_and_interpolate(cp.x_sig)
+                cp.y_sig = FourierController.smoothen_and_interpolate(cp.y_sig)
 
-            for gx in gaussian_noise_x:
-                plt.plot(FourierController.smoothen_and_interpolate(gx))
-
-            plt.plot(mean_x, 'o', label='Mean X')
-            plt.title(f'X with Gaussian Noise ({samples} samples)')
-            plt.legend(loc=self.LEGEND_PLOT_LOCATION)
-            plt.show()
-
-            plt.clf()
-            plt.cla()
-            plt.close()
-
-            for a in self.y_sig_group:
-                plt.plot(a)
-
-            for gy in gaussian_noise_y:
-                plt.plot(FourierController.smoothen_and_interpolate(gy))
-
-            plt.plot(mean_x, 'o', label='Mean y')
-            plt.title(f'Y with Gaussian Noise ({samples} samples)')
-            plt.legend(loc=self.LEGEND_PLOT_LOCATION)
-            plt.show()
-
-            plt.clf()
-            plt.cla()
-            plt.close()
-
-    def generate_gaussian_noise_from_class_arrays(self, n_x=100, n_y=100, scale_x=1, scale_y=.5, plot=False):
-        gaussian_x = [self.generate_gaussian_noise(n=n_x, scale=scale_x, signal_=x) for x in self.x_sig_group]
-        gaussian_y = [self.generate_gaussian_noise(n=n_y, scale=scale_y, signal_=y) for y in self.y_sig_group]
-
-        sm_gaussian_x = [[FourierController.smoothen_and_interpolate(g) for g in matrix] for matrix in gaussian_x]
-        sm_gaussian_y = [[FourierController.smoothen_and_interpolate(g) for g in matrix] for matrix in gaussian_y]
-
-        if plot:
-            for index, (x_matrix, y_matrix) in enumerate(zip(sm_gaussian_x, sm_gaussian_y)):
-                for x_signal, y_signal in zip(x_matrix, y_matrix):
-                    plt.plot(x_signal)
-                    plt.plot(y_signal)
-
-                plt.title(index)
-                plt.show()
-                plt.cla()
-                plt.clf()
-                plt.close()
-
-        return sm_gaussian_x, sm_gaussian_y
+        return synth_classed_patterns_from_gaussian
 
     def run(self):
-        smg_x, smg_y = self.generate_gaussian_noise_from_class_arrays()
-        data = JSONDatasetBuilder.build_json_for_training(smg_x, smg_y, self.class_)
-        self.serialize_dataset(data)
+
+        dataset = list()
+
+        patterns = self.generate_gaussian_samples_from_classed_patterns()
+
+        dataset.extend(JSONDatasetBuilder.build_json_from_patterns(patterns=patterns))
+        dataset.extend(JSONDatasetBuilder.build_json_from_patterns(patterns=self.classed_patterns_bkp))
+
+        self.serialize_dataset(dataset)
 
 
 if __name__ == '__main__':
