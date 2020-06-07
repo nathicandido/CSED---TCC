@@ -1,6 +1,7 @@
 .idea
 **/__pycache__/*
 assets
+assets_tmp
 venv
 dataset
 src/saved_images
