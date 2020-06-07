@@ -20,15 +20,15 @@ class Main:
     PARSED_FILES_PATH = Path.joinpath(Path.cwd(), '..', 'dataset', 'parsed')
 
     @classmethod
-    def filter_irrevelevant_ts(cls, tracker: TrackingController, maneuver_dataset_index):
+    def filter_irrevelevant_ts(cls, tracker: TrackingController):
         for i, car in enumerate(tracker.car_list):
             if len(car.positions) < GeneralParameters.INSUFFICIENT_TIME_SERIES_LENGTH:
                 try:
                     rename(
                         str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER,
-                                          f'idx_{maneuver_dataset_index}-{str(car.ID)}')),
+                                          f'{str(car.ID)}')),
                         str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER,
-                                          f'idx_{maneuver_dataset_index}-{str(car.ID)}_DELETED'))
+                                          f'{str(car.ID)}_DELETED'))
                     )
 
                 except FileNotFoundError:
@@ -38,7 +38,7 @@ class Main:
         return tracker
 
     @classmethod
-    def run(cls, video_path_list, parse=False, maneuver='', maneuver_dataset_index=0, plot=False, debug=False, dump_buffer=False):
+    def run(cls, video_path_list, parse=False, maneuver='', plot=False, debug=False, dump_buffer=False):
 
         camera_list = list(
             starmap(
@@ -54,7 +54,7 @@ class Main:
 
         received_ts = list()
         yolo = YoloController(cameras=camera_list, debug=debug)
-        lucas_kanade = TrackingController(debug=debug, dump_buffer=dump_buffer, maneuver_dataset_index=maneuver_dataset_index)
+        lucas_kanade = TrackingController(debug=debug, dump_buffer=dump_buffer)
 
         if not debug:
             for _ in tqdm(range(0, min_video_length, GeneralParameters.NUMBER_OF_FRAMES)):
@@ -66,7 +66,7 @@ class Main:
                 cars_list = yolo.get_cameras_images()
                 received_ts.extend(lucas_kanade.receiver(cars_list))
 
-        lucas_kanade = cls.filter_irrevelevant_ts(lucas_kanade, maneuver_dataset_index)
+        lucas_kanade = cls.filter_irrevelevant_ts(lucas_kanade)
 
         abstract_vehicle_list = list()
 
@@ -112,7 +112,7 @@ class Main:
             for car in abstract_vehicle_list:
                 savez(
                     f'{current_parse_folder}/'
-                    f'{maneuver.upper()}_{str(car.vehicle_id).replace(".", "_")}-idx_{maneuver_dataset_index}.npz',
+                    f'{maneuver.upper()}_{str(car.vehicle_id).replace(".", "_")}.npz',
                     label=array([maneuver.upper()]),
                     x_sig=car.signal.x_sig,
                     y_sig=car.signal.y_sig
@@ -143,11 +143,11 @@ if __name__ == '__main__':
                                 help='Visualize a more thorough execution',
                                 action='store_true')
 
-    optional_group.add_argument('--dump_buffer',
+    optional_group.add_argument('--dump-buffer',
                                 help='Save images from frame buffer during execution',
                                 action='store_true')
 
-    required_group.add_argument('--video_path_list',
+    required_group.add_argument('--video-path-list',
                                 help='Set of paths to access the videos for processing, '
                                      'i. e.: "path/to/file/one; path/to/file/2", '
                                      '4 files are required',
@@ -157,7 +157,6 @@ if __name__ == '__main__':
 
     if all([args.parse, args.maneuver]):
         path_list = args.video_path_list.split(';')
-        maneuver_dataset_index = path_list[0].split('/')[-2].split('-')[-1]
         if len(path_list) != 4:
             raise ArgumentError('--video_path_list must contain 4 paths')
 
@@ -165,7 +164,6 @@ if __name__ == '__main__':
             path_list,
             parse=args.parse,
             maneuver=args.maneuver,
-            maneuver_dataset_index=maneuver_dataset_index,
             plot=args.plot,
             debug=args.debug,
             dump_buffer=args.dump_buffer

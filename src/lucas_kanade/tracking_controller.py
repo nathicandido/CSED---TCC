@@ -14,14 +14,12 @@ import time
 
 class TrackingController:
 
-    def __init__(self, debug=False, dump_buffer=False, maneuver_dataset_index=0):
+    def __init__(self, debug=False, dump_buffer=False):
         self.TAG = 'LK'
         self.debug = debug
         self.dump_buffer = dump_buffer
         self.log = Log()
         self.car_list: List[RealCar] = list()
-        if self.dump_buffer:
-            self.maneuver_dataset_index = maneuver_dataset_index
         try:
             Path.mkdir(GeneralParameters.SAVED_IMAGES_FOLDER)
 
@@ -45,7 +43,7 @@ class TrackingController:
                         self.log.d(self.TAG, f'is the same car, ID {self.car_list[candidate[0]].ID}')
 
                     if self.dump_buffer:
-                        cv2.imwrite(str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER, f'idx_{self.maneuver_dataset_index}-{str(self.car_list[candidate[0]].ID)}',
+                        cv2.imwrite(str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER, f'{str(self.car_list[candidate[0]].ID)}',
                                                       f'{time.time()}.jpg')), new_image_car.get_image())
                     break
             else:
@@ -54,8 +52,8 @@ class TrackingController:
 
                 if self.dump_buffer:
                     if not Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER, str(new_real_car.ID)).is_dir():
-                        Path.mkdir(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER, f'idx_{self.maneuver_dataset_index}-{str(new_real_car.ID)}'))
-                        cv2.imwrite(str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER, f'idx_{self.maneuver_dataset_index}-{str(new_real_car.ID)}',
+                        Path.mkdir(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER, f'{str(new_real_car.ID)}'))
+                        cv2.imwrite(str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER, f'{str(new_real_car.ID)}',
                                                       f'{time.time()}.jpg')), new_image_car.get_image())
                 self.car_list.append(new_real_car)
 
@@ -92,9 +90,9 @@ class TrackingController:
                     if self.dump_buffer:
                         rename(
                             str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER,
-                                              f'idx_{self.maneuver_dataset_index}-{str(car.ID)}')),
+                                              f'{str(car.ID)}')),
                             str(Path.joinpath(GeneralParameters.SAVED_IMAGES_FOLDER,
-                                              f'idx_{self.maneuver_dataset_index}-{str(car.ID)}_{folder}'))
+                                              f'{str(car.ID)}_{folder}'))
                         )
                 except FileNotFoundError:
                     pass

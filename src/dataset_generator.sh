@@ -9,6 +9,6 @@ MAIN=$(find . -name main.py)
 for i in $(ls -d $ASSETS_FOLDER/$MANEUVER*);
 do
 	echo "----------EXEC - $i----------"
-	VAR="$MAIN --parse --maneuver $MANEUVER --video_path_list /$i/front.mp4;/$i/left.mp4;/$i/rear.mp4;/$i/right.mp4 --dump_buffer"
+	VAR="$MAIN --parse --maneuver $MANEUVER --video-path-list /$i/front.mp4;/$i/left.mp4;/$i/rear.mp4;/$i/right.mp4"
 	python $VAR
 done
