@@ -2,7 +2,7 @@ import os
 
 from keras import backend
 from keras.layers import Dense, Flatten, LeakyReLU
-from keras.models import Sequential
+from keras.models import Sequential, model_from_json
 from tensorflow import ConfigProto, Session
 from sklearn.model_selection import StratifiedKFold
 import numpy as np
@@ -27,7 +27,7 @@ class Classifier:
         config = ConfigProto(device_count=dict(GPU=1, CPU=2))
         sess = Session(config=config)
         backend.set_session(sess)
-        self.run()
+        self.train()
         backend.clear_session()
 
     @classmethod
@@ -62,7 +62,7 @@ class Classifier:
                 tn += 2
                 fn += 1
 
-        print(f'TP: {tp} | FP: {fp} | TN: {tn} | FN: {fn}')
+        # print(f'TP: {tp} | FP: {fp} | TN: {tn} | FN: {fn}')
         return tp, fp, tn, fn
 
     @classmethod
@@ -111,59 +111,41 @@ class Classifier:
         return tp / (tp + fn)
 
     @classmethod
-    def run(cls):
+    def train(cls):
+        train_dataset, train_labels, test_dataset, test_labels = cls.get_dataset()
 
-        original_train_dataset, original_train_labels = cls.get_dataset()
+        train_dataset.extend(test_dataset)
+        train_labels.extend(test_labels)
 
-        # Will return a list of sliced dataset, to use cross validation
-        train_dataset_list, train_labels_list, test_dataset_list, test_labels_list = \
-            cls.split_dataset_with_cross_validation(original_train_dataset, original_train_labels)
+        train_dataset = np.array(train_dataset)
 
-        tr_tst_matrix = list()
-        for train_dataset, train_labels, test_dataset, test_labels in zip(train_dataset_list, train_labels_list,
-                                                                          test_dataset_list, test_labels_list):
-            train_dataset = np.array(train_dataset)
+        train_labels = np.array(list(map(lambda each: cls.LABELS[each], train_labels)))
 
-            train_labels = np.array(list(map(lambda each: cls.LABELS[each], train_labels)))
+        classifier = cls.create_classifier()
 
-            classifier = cls.create_classifier()
+        classifier.fit(train_dataset, train_labels, batch_size=10, epochs=100)
 
-            classifier.fit(train_dataset, train_labels, batch_size=10, epochs=100)
+        model_json = classifier.to_json()
 
-            # To validate prediction_list with test_labels.
-            # So, will be possible to confirm the accuracy for this sliced list
+        with open('model.json', 'w') as f:
+            f.write(model_json)
 
-            test_dataset = np.array(test_dataset)
-            test_labels = np.array(list(map(lambda each: cls.LABELS[each], test_labels)))
+        classifier.save_weights('model.h5')
 
-            prediction_list = classifier.predict(test_dataset)
+    @classmethod
+    def classify(cls, pattern):
+        f = open('C:\\Users\\Tiagoo\\PycharmProjects\\CSED---TCC\\src\\classifier\\model.json', 'r')
+        loaded_model_json = f.read()
+        f.close()
 
-            cls.metrics(prediction_list, test_labels)
+        classifier: Sequential = model_from_json(loaded_model_json)
+        classifier.load_weights('C:\\Users\\Tiagoo\\PycharmProjects\\CSED---TCC\\src\\classifier\\model.h5')
 
-            tr_tst_matrix.append(cls.dataset_split_metrics(train_labels, test_labels))
+        classifier.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
 
-        print('AVG ACCURACY')
-        for avg_acc in cls.AVG_ACC:
-            print(avg_acc)
+        prediction = classifier.predict(pattern)
 
-        print('ACC PER CLASS')
-        for acc in cls.ACC_PER_CLASS:
-            pp(acc)
-
-        print('PPV PER CLASS')
-        for ppv in cls.PPV_PER_CLASS:
-            pp(ppv)
-
-        print('TPR PER CLASS')
-        for tpr in cls.TPR_PER_CLASS:
-            pp(tpr)
-
-        print('TRAIN TEST SPLIT')
-        for trtst in tr_tst_matrix:
-            print(trtst)
-
-        # will be necessary to confirm all predicted values,
-        # and will be possible to determine the accuracy for our model/classifier.
+        return prediction
 
     @classmethod
     def create_classifier(cls):
@@ -178,45 +160,113 @@ class Classifier:
 
         return classifier
 
-    @classmethod
-    def get_dataset(cls):
-        with open(os.path.join(os.getcwd(), '..', '..', 'dataset', 'ready_for_training.pkl'), 'rb') as f:
+    @staticmethod
+    def get_dataset():
+        with open(os.path.join(os.getcwd(), '..', '..', 'dataset', 'DATASET_B_FINAL.pkl'), 'rb') as f:
             data = pkl.load(f)
-            train_dataset = np.array([[index['x_sig'], index['y_sig']] for index in data])
-            train_label = np.array([np.array2string(index['label']) for index in data])
-            return train_dataset, train_label
+            train_dataset = [[index['x_sig'], index['y_sig']] for index in data]
+            train_label = [np.array2string(index['label']) for index in data]
 
-    @classmethod
-    def split_dataset_with_cross_validation(cls, dataset, labels, k=5):
+        with open(os.path.join(os.getcwd(), '..', '..', 'dataset', 'DATASET_A_FINAL.pkl'), 'rb') as f:
+            data = pkl.load(f)
+            test_dataset = [[index['x_sig'], index['y_sig']] for index in data]
+            test_label = [np.array2string(index['label']) for index in data]
+
+        return train_dataset, train_label, test_dataset, test_label
+
+
+    # @classmethod
+    # def split_dataset_with_cross_validation(cls, dataset, labels, k=5):
         splitter = StratifiedKFold(n_splits=k)
-        cross_validation = splitter.split(dataset, labels)
-        crossed_train_dataset_list = list()
-        crossed_train_labels_list = list()
-        crossed_test_dataset_list = list()
-        crossed_test_labels_list = list()
-        for train_index, test_index in cross_validation:
-            train_dataset, train_labels, test_dataset, test_labels = cls.split_dataset(train_index, test_index, dataset,
-                                                                                       labels)
-            crossed_train_dataset_list.append(train_dataset)
-            crossed_train_labels_list.append(train_labels)
-            crossed_test_dataset_list.append(test_dataset)
-            crossed_test_labels_list.append(test_labels)
-        return crossed_train_dataset_list, crossed_train_labels_list, crossed_test_dataset_list, crossed_test_labels_list
+    #     cross_validation = splitter.split(dataset, labels)
+    #     crossed_train_dataset_list = list()
+    #     crossed_train_labels_list = list()
+    #     crossed_test_dataset_list = list()
+    #     crossed_test_labels_list = list()
+    #     for train_index, test_index in cross_validation:
+    #         train_dataset, train_labels, test_dataset, test_labels = cls.split_dataset(train_index, test_index, dataset,
+    #                                                                                    labels)
+    #         crossed_train_dataset_list.append(train_dataset)
+    #         crossed_train_labels_list.append(train_labels)
+    #         crossed_test_dataset_list.append(test_dataset)
+    #         crossed_test_labels_list.append(test_labels)
+    #     return crossed_train_dataset_list, crossed_train_labels_list, \
+    #         crossed_test_dataset_list, crossed_test_labels_list
+    #
+    # @staticmethod
+    # def split_dataset(train_index, test_index, dataset, labels):
+    #     train_dataset, train_labels = [
+    #         [dataset[index] for index in train_index],
+    #         [labels[index] for index in train_index]
+    #     ]
+    #
+    #     test_dataset, test_labels = [
+    #         [dataset[index] for index in test_index],
+    #         [labels[index] for index in test_index]
+    #     ]
+    #
+    #     return train_dataset, train_labels, test_dataset, test_labels
 
-    @classmethod
-    def split_dataset(cls, train_index, test_index, dataset, labels):
-        train_dataset, train_labels = [
-            [dataset[index] for index in train_index],
-            [labels[index] for index in train_index]
-        ]
-
-        test_dataset, test_labels = [
-            [dataset[index] for index in test_index],
-            [labels[index] for index in test_index]
-        ]
-
-        return train_dataset, train_labels, test_dataset, test_labels
-
+    # USADO PARA EXTRAIR AS MÉTRICAS, NECESSÁRIO CONVERTER LISTAS DO GET_DATASET PARA NP.ARRAY
+    # @classmethod
+    # def test(cls):
+    #
+    #     # original_train_dataset, original_train_labels = cls.get_dataset()
+    #
+    #     # Will return a list of sliced dataset, to use cross validation
+    #     # train_dataset_list, train_labels_list, test_dataset_list, test_labels_list = \
+    #     #     cls.split_dataset_with_cross_validation(original_train_dataset, original_train_labels)
+    #
+    #     train_dataset, train_labels, test_dataset, test_labels = cls.get_dataset()
+    #
+    #     # tr_tst_matrix = list()
+    #     # for train_dataset, train_labels, test_dataset, test_labels in zip(train_dataset_list, train_labels_list,
+    #     #                                                                   test_dataset_list, test_labels_list):
+    #     train_dataset = np.array(train_dataset)
+    #
+    #     train_labels = np.array(list(map(lambda each: cls.LABELS[each], train_labels)))
+    #     classifier = cls.create_classifier()
+    #
+    #     # print(train_dataset[0])
+    #     # print(test_dataset[0])
+    #
+    #     classifier.fit(train_dataset, train_labels, batch_size=10, epochs=100)
+    #
+    #     # To validate prediction_list with test_labels.
+    #     # So, will be possible to confirm the accuracy for this sliced list
+    #
+    #     test_dataset = np.array(test_dataset)
+    #
+    #     test_labels = np.array(list(map(lambda each: cls.LABELS[each], test_labels)))
+    #
+    #     prediction_list = classifier.predict(test_dataset)
+    #
+    #     cls.metrics(prediction_list, test_labels)
+    #
+    #     # tr_tst_matrix.append(cls.dataset_split_metrics(train_labels, test_labels))
+    #
+    #     print('AVG ACCURACY')
+    #     for avg_acc in cls.AVG_ACC:
+    #         print(avg_acc)
+    #
+    #     print('ACC PER CLASS')
+    #     for acc in cls.ACC_PER_CLASS:
+    #         pp(acc)
+    #
+    #     print('PPV PER CLASS')
+    #     for ppv in cls.PPV_PER_CLASS:
+    #         pp(ppv)
+    #
+    #     print('TPR PER CLASS')
+    #     for tpr in cls.TPR_PER_CLASS:
+    #         pp(tpr)
+    #
+    #     # print('TRAIN TEST SPLIT')
+    #     # for trtst in tr_tst_matrix:
+    #     #     print(trtst)
+    #
+    #     # will be necessary to confirm all predicted values,
+    #     # and will be possible to determine the accuracy for our model/classifier.
 
 if __name__ == '__main__':
     Classifier()

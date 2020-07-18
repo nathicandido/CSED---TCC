@@ -26,8 +26,8 @@ class SynthetizedClassedPattern(ClassedPattern):
 
 
 class GaussianNoiseSynthetizer:
-    PATH_TO_PARSED = str(Path.joinpath(Path.cwd(), '..', 'dataset', 'parsed'))
-    TARGET_TO_FULL_DATASET = str(Path.joinpath(Path.cwd(), '..', 'dataset', 'ready_for_training_synth'))
+    PATH_TO_PARSED = Path.joinpath(Path.cwd(), '..', 'dataset', 'dataset_B')
+    TARGET_TO_FULL_DATASET = Path.joinpath(Path.cwd(), '..', 'dataset', 'DATASET_B_FINAL')
 
     CLASS_ARRAY_X_KEY = 'x_sig'
     CLASS_ARRAY_Y_KEY = 'y_sig'

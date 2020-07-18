@@ -7,17 +7,22 @@ from numpy import savez, array
 from tqdm import tqdm
 import time
 from os import rename
+import numpy as np
+from pprint import pprint as pp
 
 from lucas_kanade.tracking_controller import TrackingController
 from constants.general_parameters import GeneralParameters
 from yolo.helpers.camera import Camera
 from yolo.yolo_controller import YoloController
 from fft.fourier_controller import FourierController
+from classifier.classifier import Classifier
 
 
 class Main:
     ANGLE_LIST = [0, 90, 180, 270]
     PARSED_FILES_PATH = Path.joinpath(Path.cwd(), '..', 'dataset', 'parsed')
+
+    PATTERN_MAPPING = ['SWERVING', 'ULTRAPASSAGEM DIREITA', 'ULTRAPASSAGEM ESQUERDA', 'MUDANÇA DE FAIXA DIREITA']
 
     @classmethod
     def filter_irrevelevant_ts(cls, tracker: TrackingController):
@@ -36,6 +41,11 @@ class Main:
                 tracker.car_list.pop(i)
 
         return tracker
+
+    @classmethod
+    def classify_pattern(cls, pattern):
+        prediction = Classifier.classify(pattern)
+        return cls.PATTERN_MAPPING[int(np.argmax(prediction))]
 
     @classmethod
     def run(cls, video_path_list, parse=False, maneuver='', plot=False, debug=False, dump_buffer=False):
@@ -86,6 +96,11 @@ class Main:
                     list(map(lambda c: c.y, car.positions))
                 )
             )
+
+        patterns = np.array([np.array([vehicle.signal.x_sig, vehicle.signal.y_sig]) for vehicle in abstract_vehicle_list])
+        predictions = cls.classify_pattern(patterns)
+
+        pp(predictions)
 
         if plot:
             while True:
@@ -155,19 +170,19 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if all([args.parse, args.maneuver]):
-        path_list = args.video_path_list.split(';')
-        if len(path_list) != 4:
-            raise ArgumentError('--video_path_list must contain 4 paths')
+    # if any([args.parse, args.maneuver]):
+    path_list = args.video_path_list.split(';')
+    if len(path_list) != 4:
+        raise ArgumentError('--video_path_list must contain 4 paths')
 
-        Main.run(
-            path_list,
-            parse=args.parse,
-            maneuver=args.maneuver,
-            plot=args.plot,
-            debug=args.debug,
-            dump_buffer=args.dump_buffer
-        )
+    Main.run(
+        path_list,
+        parse=args.parse,
+        maneuver=args.maneuver,
+        plot=args.plot,
+        debug=args.debug,
+        dump_buffer=args.dump_buffer
+    )
 
-    else:
-        raise ArgumentError('if --parse is active --maneuver is required')
+    # else:
+    #     raise ArgumentError('if --parse is active --maneuver is required')
